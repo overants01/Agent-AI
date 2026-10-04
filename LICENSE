@@ -1,0 +1,44 @@
+MIT License
+
+Copyright (c) 2026 MOD (Acheron) and Agent-AI contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+For clarity, the permission to modify the Software includes editing and adapting
+its source code and distributing modified versions, provided the copyright and
+permission notices above are retained as required by this license.
+
+Created and developed by MOD (Acheron). "MOD" is pronounced like "mod".
+
+Thai translation (for convenience; the English text above is the controlling
+license text):
+
+ใบอนุญาต MIT (MIT License)
+
+ลิขสิทธิ์ (c) 2026 MOD (Acheron) และผู้ร่วมพัฒนา Agent-AI
+
+ผู้ที่ได้รับสำเนาซอฟต์แวร์และเอกสารประกอบนี้ ("ซอฟต์แวร์") ได้รับอนุญาตให้ใช้งาน คัดลอก แก้ไข source code ดัดแปลง สร้างงานต่อยอด ผสานรวม เผยแพร่ แจกจ่าย อนุญาตช่วง และ/หรือขายสำเนาซอฟต์แวร์ได้โดยไม่มีค่าใช้จ่ายและไม่มีข้อจำกัด ทั้งนี้ต้องปฏิบัติตามเงื่อนไขต่อไปนี้:
+
+ต้องแนบประกาศลิขสิทธิ์และข้อความอนุญาตข้างต้นไว้กับสำเนาทั้งหมดหรือส่วนสำคัญของซอฟต์แวร์
+
+การอนุญาตให้แก้ไขรวมถึงการแก้ไขและปรับปรุง source code ตลอดจนแจกจ่ายเวอร์ชันที่ดัดแปลงได้ โดยต้องคงประกาศลิขสิทธิ์และข้อความอนุญาตไว้ตามเงื่อนไขข้างต้น
+
+ซอฟต์แวร์นี้ให้บริการ "ตามสภาพที่เป็นอยู่" โดยไม่มีการรับประกันใด ๆ ไม่ว่าโดยชัดแจ้งหรือโดยปริยาย รวมถึงการรับประกันความสามารถในการจำหน่าย ความเหมาะสมสำหรับวัตถุประสงค์เฉพาะ และการไม่ละเมิดสิทธิ์ ในทุกกรณี ผู้เขียนหรือผู้ถือลิขสิทธิ์จะไม่รับผิดชอบต่อการเรียกร้อง ความเสียหาย หรือความรับผิดใด ๆ ไม่ว่าจะเกิดจากสัญญา การละเมิด หรือเหตุอื่น อันเกี่ยวข้องกับซอฟต์แวร์หรือการใช้งานซอฟต์แวร์
+
+จัดทำและพัฒนาโดย MOD (Acheron) โดย MOD อ่านออกเสียงว่า "มด"
