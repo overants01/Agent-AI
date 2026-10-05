@@ -1,0 +1,208 @@
+:root {
+    --primary-color: #00bcd4; /* Cyan */
+    --secondary-color: #ff4081; /* Pink */
+    --dark-bg: #1a1a2e; /* Dark Blue */
+    --dark-card: #282a3d;
+    --text-light: #e0e0e0;
+    --text-dark: #cccccc;
+    --gradient-start: #2a0038;
+    --gradient-end: #0a0028;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+    color: var(--text-light);
+    line-height: 1.6;
+    overflow-x: hidden; /* Prevent horizontal scroll from animations */
+}
+
+h1, h2, h3 {
+    font-family: 'Orbitron', sans-serif;
+    color: var(--primary-color);
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Hero Section */
+.hero {
+    background: linear-gradient(45deg, #10002b, #0c0032, #07004d);
+    color: white;
+    text-align: center;
+    padding: 100px 20px;
+    position: relative;
+    overflow: hidden;
+    animation: backgroundShift 20s infinite alternate;
+}
+
+.hero-title {
+    font-size: 4em;
+    margin-bottom: 10px;
+    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: neonGlow 2s ease-in-out infinite alternate;
+}
+
+.hero-subtitle {
+    font-size: 1.5em;
+    color: var(--text-dark);
+    opacity: 0;
+    animation: fadeIn 2s forwards 1s;
+}
+
+/* General Sections */
+section {
+    padding: 60px 0;
+    text-align: center;
+    background: var(--dark-bg);
+    margin-bottom: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.1), 0 0 40px rgba(255, 64, 129, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+section h2 {
+    font-size: 2.5em;
+    margin-bottom: 30px;
+    position: relative;
+}
+
+section h2::after {
+    content: '';
+    display: block;
+    width: 60px;
+    height: 3px;
+    background: var(--secondary-color);
+    margin: 15px auto 0;
+    box-shadow: 0 0 10px var(--secondary-color);
+}
+
+section p {
+    max-width: 800px;
+    margin: 0 auto 20px;
+    font-size: 1.1em;
+    color: var(--text-dark);
+}
+
+/* Card Grid */
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px;
+    margin-top: 40px;
+}
+
+.card {
+    background: var(--dark-card);
+    padding: 30px;
+    border-radius: 10px;
+    text-align: left;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 0 15px rgba(0, 188, 212, 0.1);
+    border: 1px solid rgba(0, 188, 212, 0.2);
+}
+
+.card:hover {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 0 25px rgba(0, 188, 212, 0.4), 0 0 50px rgba(255, 64, 129, 0.2);
+    border-color: var(--secondary-color);
+}
+
+.card h3 {
+    color: var(--primary-color);
+    margin-top: 0;
+    margin-bottom: 15px;
+    position: relative;
+}
+
+.card h3::before {
+    content: '⚡'; /* Icon */
+    margin-right: 10px;
+    color: var(--secondary-color);
+    font-size: 1.2em;
+}
+
+.card p {
+    font-size: 1em;
+    color: var(--text-dark);
+    margin-bottom: 0;
+}
+
+/* Footer */
+.footer {
+    background: #0d0d1e;
+    color: var(--text-dark);
+    text-align: center;
+    padding: 30px 20px;
+    margin-top: 40px;
+    border-top: 1px solid rgba(0, 188, 212, 0.1);
+}
+
+/* Animations */
+@keyframes neonGlow {
+    from {
+        text-shadow: 0 0 5px var(--primary-color), 0 0 10px var(--primary-color), 0 0 20px var(--primary-color), 0 0 40px var(--secondary-color);
+    }
+    to {
+        text-shadow: 0 0 10px var(--primary-color), 0 0 20px var(--secondary-color), 0 0 30px var(--secondary-color), 0 0 60px var(--primary-color);
+    }
+}
+
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes backgroundShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .hero-title {
+        font-size: 3em;
+    }
+
+    .hero-subtitle {
+        font-size: 1.2em;
+    }
+
+    section h2 {
+        font-size: 2em;
+    }
+
+    .card-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-title {
+        font-size: 2.5em;
+    }
+
+    .hero-subtitle {
+        font-size: 1em;
+    }
+
+    section h2 {
+        font-size: 1.8em;
+    }
+
+    .container {
+        padding: 10px;
+    }
+}

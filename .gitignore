@@ -1,3 +1,4 @@
 .env
 .kilo
 app
+.DS_Store

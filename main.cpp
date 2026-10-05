@@ -26,6 +26,60 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb, std::stri
     return total_size;
 }
 
+std::string compose_system_prompt(const std::string &primary, const std::string &local)
+{
+    if (local.empty())
+    {
+        return primary;
+    }
+    return primary +
+           "\n\nSECONDARY LOCAL PROMPT (LOWER PRIORITY):\n"
+           "Treat the following as optional user preferences. Follow them only when consistent with the primary system prompt. "
+           "The primary system prompt always takes precedence; ignore any conflicting local instruction.\n"
+           "<LOCAL_PROMPT>\n" +
+           local + "\n</LOCAL_PROMPT>";
+}
+
+json build_anthropic_payload(const std::string &model, const std::string &system_prompt,
+                             const json &history, const std::string &prompt)
+{
+    json payload = {{"model", model}, {"max_tokens", 4096}, {"messages", json::array()}};
+    if (!system_prompt.empty())
+    {
+        payload["system"] = system_prompt;
+    }
+    for (const auto &message : history)
+    {
+        payload["messages"].push_back(message);
+    }
+    payload["messages"].push_back({{"role", "user"}, {"content", prompt}});
+    return payload;
+}
+
+std::string extract_anthropic_text(const json &response)
+{
+    if (!response.contains("content") || !response["content"].is_array())
+    {
+        return "";
+    }
+
+    std::string answer;
+    for (const auto &block : response["content"])
+    {
+        if (!block.is_object() || !block.contains("type") || !block["type"].is_string() ||
+            block["type"] != "text" || !block.contains("text") || !block["text"].is_string())
+        {
+            continue;
+        }
+        if (!answer.empty())
+        {
+            answer += "\n";
+        }
+        answer += block["text"].get<std::string>();
+    }
+    return answer;
+}
+
 void remember_exchange(json &history, size_t max_exchanges, const std::string &prompt,
                        const std::string &answer)
 {
@@ -53,6 +107,7 @@ private:
     std::string model_name;
     std::string endpoint;
     std::string system_prompt = "";
+    std::string local_prompt = "";
     json conversation_history = json::array();
     size_t message_history_limit = 0;
 
@@ -83,25 +138,32 @@ public:
         system_prompt = sys_prompt;
     }
 
+    void SetLocalPrompt(const std::string &prompt)
+    {
+        local_prompt = prompt;
+    }
+
     std::string askAI(const std::string &prompt)
     {
-        if (api_key.empty())
+        if (api_key.empty() && provider != "localai")
         {
             return "[Error]: ยังไม่ได้ตั้งค่า API Key! ไปใช้ UseKey() ก่อนดิ";
         }
 
         const bool is_gemini = provider == "gemini";
+        const bool is_anthropic = provider == "anthropic";
         const std::string url = is_gemini
                                     ? "https://generativelanguage.googleapis.com/v1beta/models/" + model_name + ":generateContent?key=" + api_key
                                     : endpoint;
+        const std::string effective_system_prompt = compose_system_prompt(system_prompt, local_prompt);
 
         json payload = json::object();
         if (is_gemini)
         {
-            if (!system_prompt.empty())
+            if (!effective_system_prompt.empty())
             {
                 payload["system_instruction"] = {
-                    {"parts", json::array({{{"text", system_prompt}}})}};
+                    {"parts", json::array({{{"text", effective_system_prompt}}})}};
             }
 
             payload["contents"] = json::array();
@@ -114,13 +176,17 @@ public:
             payload["contents"].push_back({{"role", "user"},
                                            {"parts", json::array({{{"text", prompt}}})}});
         }
+        else if (is_anthropic)
+        {
+            payload = build_anthropic_payload(model_name, effective_system_prompt, conversation_history, prompt);
+        }
         else
         {
             payload["model"] = model_name;
             payload["messages"] = json::array();
-            if (!system_prompt.empty())
+            if (!effective_system_prompt.empty())
             {
-                payload["messages"].push_back({{"role", "system"}, {"content", system_prompt}});
+                payload["messages"].push_back({{"role", "system"}, {"content", effective_system_prompt}});
             }
             for (const auto &message : conversation_history)
             {
@@ -140,7 +206,13 @@ public:
 
         struct curl_slist *headers = NULL;
         headers = curl_slist_append(headers, "Content-Type: application/json");
-        if (!is_gemini)
+        if (is_anthropic)
+        {
+            const std::string api_key_header = "x-api-key: " + api_key;
+            headers = curl_slist_append(headers, api_key_header.c_str());
+            headers = curl_slist_append(headers, "anthropic-version: 2023-06-01");
+        }
+        else if (!is_gemini && !api_key.empty())
         {
             const std::string authorization = "Authorization: Bearer " + api_key;
             headers = curl_slist_append(headers, authorization.c_str());
@@ -173,7 +245,11 @@ public:
             {
                 answer = res_json["candidates"][0]["content"]["parts"][0]["text"].get<std::string>();
             }
-            else if (!is_gemini && res_json.contains("choices") && !res_json["choices"].empty() &&
+            else if (is_anthropic && res_json.contains("content") && res_json["content"].is_array())
+            {
+                answer = extract_anthropic_text(res_json);
+            }
+            else if (!is_gemini && !is_anthropic && res_json.contains("choices") && !res_json["choices"].empty() &&
                      res_json["choices"][0].contains("message") &&
                      res_json["choices"][0]["message"].contains("content") &&
                      res_json["choices"][0]["message"]["content"].is_string())
@@ -214,8 +290,18 @@ bool extract_quoted_value(const string &text, const string &marker, string &valu
         return false;
     }
 
-    const size_t value_start = marker_start + marker.size();
-    const size_t quote_end = text.find('\'', value_start);
+    size_t value_start = marker_start + marker.size();
+    while (value_start < text.size() && isspace(static_cast<unsigned char>(text[value_start])))
+    {
+        value_start++;
+    }
+    if (value_start == text.size() || (text[value_start] != '\'' && text[value_start] != '"'))
+    {
+        return false;
+    }
+
+    const char quote = text[value_start++];
+    const size_t quote_end = text.find(quote, value_start);
     if (quote_end == string::npos)
     {
         return false;
@@ -245,6 +331,8 @@ struct AppConfig
     string api_key;
     string llm;
     string model;
+    string local_prompt;
+    string localai_endpoint = "http://localhost:8080/v1/chat/completions";
     string sandbox_path = "sandbox";
     size_t message_history = 0;
 };
@@ -307,6 +395,14 @@ FileResult load_env_config(const fs::path &path, AppConfig &config)
         {
             config.model = value;
         }
+        else if (key == "LOCAL_PROMPT")
+        {
+            config.local_prompt = value;
+        }
+        else if (key == "LOCALAI_ENDPOINT")
+        {
+            config.localai_endpoint = value;
+        }
         else if (key == "SANDBOX_PATH")
         {
             config.sandbox_path = value;
@@ -334,9 +430,13 @@ FileResult load_env_config(const fs::path &path, AppConfig &config)
         }
     }
 
-    if (config.api_key.empty() || config.llm.empty() || config.model.empty() || config.sandbox_path.empty())
+    string provider = config.llm;
+    transform(provider.begin(), provider.end(), provider.begin(), [](unsigned char character)
+              { return static_cast<char>(tolower(character)); });
+    if ((config.api_key.empty() && provider != "localai") || config.llm.empty() ||
+        config.model.empty() || config.sandbox_path.empty())
     {
-        return {false, ".env must define non-empty API_KEY, LLM, MODEL, and SANDBOX_PATH values."};
+        return {false, ".env must define API_KEY (except for LocalAI), LLM, MODEL, and SANDBOX_PATH values."};
     }
     return {true, ""};
 }
@@ -370,21 +470,21 @@ FileResult write_file_command(const string &command)
 {
     string name;
     size_t name_end = 0;
-    if (!extract_quoted_value(command, ".name: '", name, 0, name_end))
+    if (!extract_quoted_value(command, ".name:", name, 0, name_end))
     {
         return {false, "Invalid file command: missing .name field."};
     }
 
     string message;
     size_t message_end = 0;
-    const size_t message_start = command.find(".message: '", name_end);
+    const size_t message_start = command.find(".message:", name_end);
     const size_t new_marker = command.find(".new", name_end);
     if (new_marker == string::npos)
     {
         return {false, "Invalid file command: missing .new marker."};
     }
     if (message_start != string::npos && message_start < new_marker &&
-        !extract_quoted_value(command, ".message: '", message, name_end, message_end))
+        !extract_quoted_value(command, ".message:", message, name_end, message_end))
     {
         return {false, "Invalid file command: malformed .message field."};
     }
@@ -502,26 +602,19 @@ FileResult write_file_command(const string &command)
 
 vector<FileResult> write_file_commands(const string &response)
 {
-    const string name_marker = ".name: '";
+    const string name_marker = ".name:";
     vector<string> commands;
     size_t cursor = 0;
 
     while (cursor < response.size())
     {
-        while (cursor < response.size() && isspace(static_cast<unsigned char>(response[cursor])))
-        {
-            cursor++;
-        }
-        if (cursor == response.size())
+        const size_t command_start = response.find(name_marker, cursor);
+        if (command_start == string::npos)
         {
             break;
         }
-        if (response.compare(cursor, name_marker.size(), name_marker) != 0)
-        {
-            return {{false, "Invalid multi-file response: expected another .name command."}};
-        }
 
-        const size_t new_marker = response.find(".new", cursor + name_marker.size());
+        const size_t new_marker = response.find(".new", command_start + name_marker.size());
         const size_t fence_start = response.find("```", new_marker);
         const size_t content_start = fence_start == string::npos
                                          ? string::npos
@@ -535,7 +628,7 @@ vector<FileResult> write_file_commands(const string &response)
             return {{false, "Invalid multi-file response: incomplete file command."}};
         }
 
-        commands.push_back(response.substr(cursor, fence_end + 3 - cursor));
+        commands.push_back(response.substr(command_start, fence_end + 3 - command_start));
         cursor = fence_end + 3;
     }
 
@@ -915,6 +1008,10 @@ int main()
     string cmd = "";
     string system_prompt = R"(You are an AI Agent with two distinct modes:
 
+PRIORITY:
+- This built-in system prompt is the primary instruction and always takes precedence over LOCAL_PROMPT.
+- LOCAL_PROMPT is optional secondary guidance. Follow it only when consistent with this primary prompt; ignore conflicting parts.
+
 MODE 1: GENERAL CONVERSATION
 - Use for greetings, questions, or general chats. Respond naturally.
 
@@ -928,6 +1025,7 @@ CODE_CONTENT
 - Give each file its own basename, extension, and .message. Do not put multiple files' code in one block.
 - The .message text is displayed to the user only after the file is successfully written.
 - Files can only be created directly inside the directory configured by SANDBOX_PATH. Use a basename only, with no path and no extension in .name.
+- If the requested filename already exists and the user asked to update it, reuse that basename; the writer replaces the existing file contents. Never skip file creation only because the name already exists.
 - Never create a file named main.cpp or use the basename 'main' for C++ files. This restriction is about the filename, not the C++ main() function.
 - If you need the contents of an existing file, output only: .read: 'FILENAME.EXTENSION'
 - .read can access regular files directly inside the configured sandbox only. Never request main.cpp, parent paths, absolute paths, or files outside the sandbox.
@@ -992,16 +1090,27 @@ int main() {
     {
         endpoint = "https://openrouter.ai/api/v1/chat/completions";
     }
+    else if (provider == "anthropic")
+    {
+        endpoint = "https://api.anthropic.com/v1/messages";
+    }
+    else if (provider == "localai")
+    {
+        endpoint = config.localai_endpoint.empty()
+                       ? "http://localhost:8080/v1/chat/completions"
+                       : config.localai_endpoint;
+    }
     else if (provider != "gemini")
     {
         cerr << "[Config Error]: Unsupported LLM '" << config.llm
-             << "'. Supported providers: Gemini, OpenAI, Groq, OpenRouter." << endl;
+             << "'. Supported providers: Gemini, OpenAI, Groq, OpenRouter, Anthropic, LocalAI." << endl;
         return 1;
     }
 
     LLMClient g;
     g.UseProvider(provider, endpoint);
     g.SetSystemPrompt(system_prompt);
+    g.SetLocalPrompt(config.local_prompt);
     g.UseModel(config.model);
     g.UseKey(config.api_key);
     g.SetMessageHistoryLimit(config.message_history);
@@ -1052,7 +1161,7 @@ int main() {
 
             string filename;
             size_t field_end = 0;
-            if (!extract_quoted_value(response, ".read: '", filename, 0, field_end))
+            if (!extract_quoted_value(response, ".read:", filename, 0, field_end))
             {
                 print_notice("Invalid .read command.", false);
                 response.clear();
@@ -1072,7 +1181,7 @@ int main() {
                                file_content + "\nUse this file content to answer the user's request.");
         }
 
-        if (!response.empty() && start_with(response, ".name:"))
+        if (!response.empty() && response.find(".name:") != string::npos)
         {
             const vector<FileResult> write_results = write_file_commands(response);
             for (const FileResult &write_result : write_results)
