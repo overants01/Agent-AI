@@ -95,12 +95,15 @@ MESSAGE_HISTORY=0000
 
 - `.ls` แสดงรายชื่อไฟล์ปกติที่อยู่ตรงใน sandbox
 - `.read: 'filename.ext'` อ่านไฟล์ใน sandbox
+- `.edit: 'filename.ext' lines START-END` แทนที่ช่วงบรรทัด โดยต้องส่ง `.expect` ของเนื้อหาเดิมและ `.with` ของเนื้อหาใหม่
 - `.rm: 'filename.ext'` ลบไฟล์ใน sandbox; ส่งหลายบรรทัดเพื่อลบหลายไฟล์ได้
 - `.name: 'basename' .message: 'ข้อความ' .new ```extension` สร้างไฟล์ โดยใส่เนื้อหาใน code fence
 
 ชื่อใน `.name` ต้องไม่มีนามสกุล เพราะนามสกุลมาจาก code fence โปรแกรมจะจัดการนามสกุลที่ซ้ำให้อัตโนมัติ หากสร้างไฟล์ด้วยชื่อที่มีอยู่แล้ว ระบบจะเขียนทับเนื้อหาเดิม งานที่ต้องสร้างหลายไฟล์สามารถส่ง `.name` command block หลายชุดในคำตอบเดียวได้ แต่ละไฟล์มี `.message` ของตัวเอง
 
 ระบบปฏิเสธ path traversal, symlink, directory และ `main.cpp`; AI จะลบไฟล์ได้เมื่อผู้ใช้ร้องขอเท่านั้น
+
+ก่อนแก้ไฟล์ AI ต้องอ่านไฟล์ก่อน `.read` ซึ่งจะแสดงเลขบรรทัดแบบเริ่มที่ 1 คำสั่ง `.edit` ใช้ช่วงแบบรวมบรรทัดต้นและท้าย และต้องแนบ `.expect` ที่ตรงกับข้อความเดิมทุกตัวอักษร หาก source มีบรรทัดที่เป็น backticks ให้ใช้ code fence ชั้นนอกที่ยาวกว่า หากไฟล์หรือบรรทัดไม่ตรง ระบบจะไม่เขียนทับไฟล์
 
 ### License
 
@@ -200,12 +203,15 @@ Terminal chat uses separate `You` and `AI` labels, wraps prose to the terminal w
 AI-created files are written only to `sandbox/`. The agent can request:
 - `.ls` to list regular files directly inside the sandbox
 - `.read: 'filename.ext'` to read a file directly inside the sandbox
+- `.edit: 'filename.ext' lines START-END` to replace a line range, with `.expect` for the exact old text and `.with` for the replacement
 - `.rm: 'filename.ext'` to delete regular files directly inside the sandbox; multiple `.rm` lines can delete multiple files in one response
 - `.name: 'basename' .message: 'Shown after successful write' .new ```extension` followed by a real newline, the file contents, and a closing code fence to create a file
 
 For tasks that need multiple files, the AI can return multiple `.name` command blocks in one response. Each block creates one file, and the app displays each file's `.message` after its write succeeds.
 
 The `.name` value is an extensionless basename; the extension comes from the code fence. The writer also removes a repeated matching extension (for example, `index.html` plus an `html` code fence is saved as `index.html`, not `index.html.html`). If a requested filename already exists, writing to that name replaces its contents.
+
+Before editing, the AI must read the file first. `.read` results include 1-based line numbers. `.edit` ranges include both endpoints and require an `.expect` block that exactly matches the current lines; stale or mismatched text is rejected without changing the file. If source contains a line of backticks, use a longer outer fence. Edits are limited to regular files directly inside the sandbox and cannot target `main.cpp`.
 
 Paths outside the sandbox, directory traversal, symlinks, directories, and `main.cpp` are rejected. All `.rm` commands are parsed before deletion begins. The list, read, and delete operations do not access files outside the sandbox. The AI is instructed to delete files only when explicitly requested.
 

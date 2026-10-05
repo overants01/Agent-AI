@@ -7,6 +7,7 @@
 #include <vector>
 #include <algorithm>
 #include <limits>
+#include <chrono>
 #include <sstream>
 #include <sys/ioctl.h>
 #include <unistd.h>
@@ -680,6 +681,336 @@ FileResult read_sandbox_file(const string &filename, string &content)
     return {true, "Read " + filename};
 }
 
+vector<string> split_file_lines(const string &content)
+{
+    vector<string> lines;
+    istringstream input(content);
+    string line;
+    while (getline(input, line))
+    {
+        if (!line.empty() && line.back() == '\r')
+        {
+            line.pop_back();
+        }
+        lines.push_back(line);
+    }
+    return lines;
+}
+
+string number_file_lines(const string &content)
+{
+    const vector<string> lines = split_file_lines(content);
+    if (lines.empty())
+    {
+        return "(empty file)\n";
+    }
+
+    string numbered;
+    for (size_t index = 0; index < lines.size(); index++)
+    {
+        numbered += to_string(index + 1) + " | " + lines[index] + "\n";
+    }
+    return numbered;
+}
+
+bool parse_positive_line_number(const string &value, size_t &number)
+{
+    if (value.empty() || !all_of(value.begin(), value.end(), [](unsigned char character)
+                                 { return isdigit(character); }))
+    {
+        return false;
+    }
+    try
+    {
+        const unsigned long long parsed = stoull(value);
+        if (parsed == 0 || parsed > numeric_limits<size_t>::max())
+        {
+            return false;
+        }
+        number = static_cast<size_t>(parsed);
+        return true;
+    }
+    catch (const exception &)
+    {
+        return false;
+    }
+}
+
+size_t find_closing_fence(const string &text, size_t search_from, size_t fence_length)
+{
+    size_t position = search_from;
+    while ((position = text.find("```", position)) != string::npos)
+    {
+        const size_t previous_newline = position == 0 ? string::npos : text.rfind('\n', position - 1);
+        const size_t line_start = previous_newline == string::npos ? 0 : previous_newline + 1;
+        const size_t next_newline = text.find('\n', position + 3);
+        const size_t line_end = next_newline == string::npos ? text.size() : next_newline;
+        size_t fence_run_end = position;
+        while (fence_run_end < text.size() && text[fence_run_end] == '`')
+        {
+            fence_run_end++;
+        }
+
+        const string before = text.substr(line_start, position - line_start);
+        const string after = text.substr(fence_run_end, line_end - fence_run_end);
+        const bool before_is_space = all_of(before.begin(), before.end(), [](unsigned char character)
+                                            { return isspace(character); });
+        const bool after_is_space = all_of(after.begin(), after.end(), [](unsigned char character)
+                                           { return isspace(character); });
+        if (before_is_space && after_is_space && fence_run_end - position == fence_length)
+        {
+            return position;
+        }
+        position += 3;
+    }
+    return string::npos;
+}
+
+struct ParsedEditBlock
+{
+    bool success;
+    string language;
+    string content;
+    size_t after;
+    string message;
+};
+
+ParsedEditBlock parse_edit_block(const string &response, size_t marker_position)
+{
+    const size_t fence_start = response.find("```", marker_position);
+    if (fence_start == string::npos)
+    {
+        return {false, "", "", 0, "Missing code fence."};
+    }
+    size_t fence_length = 0;
+    while (fence_start + fence_length < response.size() && response[fence_start + fence_length] == '`')
+    {
+        fence_length++;
+    }
+    const size_t content_start = response.find('\n', fence_start + fence_length);
+    if (content_start == string::npos)
+    {
+        return {false, "", "", 0, "Missing newline after code fence language."};
+    }
+    const size_t fence_end = find_closing_fence(response, content_start + 1, fence_length);
+    if (fence_end == string::npos)
+    {
+        return {false, "", "", 0, "Code fence is not closed."};
+    }
+
+    const string language = trim_copy(response.substr(fence_start + fence_length,
+                                                      content_start - fence_start - fence_length));
+    const string content = response.substr(content_start + 1, fence_end - content_start - 1);
+    size_t after = fence_end + fence_length;
+    if (after < response.size() && response[after] == '\r')
+    {
+        after++;
+    }
+    if (after < response.size() && response[after] == '\n')
+    {
+        after++;
+    }
+    return {true, language, content, after, ""};
+}
+
+bool edit_language_matches_file(const string &filename, string language)
+{
+    string extension = fs::path(filename).extension().string();
+    if (!extension.empty() && extension.front() == '.')
+    {
+        extension.erase(extension.begin());
+    }
+    transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char character)
+              { return static_cast<char>(tolower(character)); });
+    transform(language.begin(), language.end(), language.begin(), [](unsigned char character)
+              { return static_cast<char>(tolower(character)); });
+    if (extension == language)
+    {
+        return true;
+    }
+
+    const vector<pair<string, vector<string>>> aliases = {
+        {"htm", {"html"}}, {"js", {"javascript"}}, {"mjs", {"javascript", "js"}}, {"cjs", {"javascript", "js"}}, {"ts", {"typescript"}}, {"py", {"python"}}, {"md", {"markdown"}}, {"yml", {"yaml"}}, {"sh", {"bash", "shell"}}, {"cc", {"cpp", "c++"}}, {"cxx", {"cpp", "c++"}}, {"cpp", {"c++"}}};
+    for (const auto &alias : aliases)
+    {
+        if (extension == alias.first &&
+            find(alias.second.begin(), alias.second.end(), language) != alias.second.end())
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+FileResult edit_sandbox_file(const string &response)
+{
+    const size_t edit_marker = response.find(".edit:");
+    string filename;
+    size_t filename_end = 0;
+    if (edit_marker == string::npos || !extract_quoted_value(response, ".edit:", filename, edit_marker, filename_end))
+    {
+        return {false, "Invalid .edit command: missing filename."};
+    }
+    if (!is_safe_filename(filename) || filename == "main.cpp")
+    {
+        return {false, "Invalid or protected filename; only sandbox files can be edited."};
+    }
+
+    const size_t expect_marker = response.find(".expect", filename_end);
+    if (expect_marker == string::npos)
+    {
+        return {false, "Invalid .edit command: missing .expect block."};
+    }
+
+    const string range_header = trim_copy(response.substr(filename_end, expect_marker - filename_end));
+    istringstream header(range_header);
+    string lines_keyword;
+    string range;
+    string extra;
+    if (!(header >> lines_keyword >> range) || (header >> extra) || lines_keyword != "lines")
+    {
+        return {false, "Invalid .edit command: use 'lines START-END'."};
+    }
+    const size_t separator = range.find('-');
+    size_t first_line = 0;
+    size_t last_line = 0;
+    if (separator == string::npos || range.find('-', separator + 1) != string::npos ||
+        !parse_positive_line_number(range.substr(0, separator), first_line) ||
+        !parse_positive_line_number(range.substr(separator + 1), last_line) || last_line < first_line)
+    {
+        return {false, "Invalid .edit range: line numbers must be positive and START must not exceed END."};
+    }
+
+    const ParsedEditBlock expected_block = parse_edit_block(response, expect_marker + 7);
+    if (!expected_block.success || expected_block.language != "text")
+    {
+        return {false, "Invalid .expect block: use a closed ```text fence."};
+    }
+    const size_t with_marker = response.find(".with", expected_block.after);
+    if (with_marker == string::npos)
+    {
+        return {false, "Invalid .edit command: missing .with replacement block."};
+    }
+    if (!all_of(response.begin() + static_cast<ptrdiff_t>(expected_block.after),
+                response.begin() + static_cast<ptrdiff_t>(with_marker), [](unsigned char character)
+                { return isspace(character); }))
+    {
+        return {false, "Invalid .edit command: unexpected text between .expect and .with."};
+    }
+
+    const ParsedEditBlock replacement_block = parse_edit_block(response, with_marker + 5);
+    if (!replacement_block.success || !edit_language_matches_file(filename, replacement_block.language))
+    {
+        return {false, "Invalid .with block: use a closed code fence matching the file type."};
+    }
+    if (!trim_copy(response.substr(replacement_block.after)).empty())
+    {
+        return {false, "Invalid .edit command: unexpected text after the replacement block."};
+    }
+
+    const FileResult sandbox = ensure_sandbox_root(false);
+    if (!sandbox.success)
+    {
+        return sandbox;
+    }
+    const fs::path target = SANDBOX_DIR / filename;
+    error_code error;
+    const fs::file_status target_status = fs::symlink_status(target, error);
+    if (error || !fs::exists(target_status))
+    {
+        return {false, "Sandbox file not found: " + filename};
+    }
+    if (fs::is_symlink(target_status) || !fs::is_regular_file(target_status))
+    {
+        return {false, "Only regular files directly inside sandbox can be edited."};
+    }
+
+    ifstream file(target, ios::binary);
+    if (!file)
+    {
+        return {false, "Cannot open sandbox file for editing."};
+    }
+    const string original((istreambuf_iterator<char>(file)), istreambuf_iterator<char>());
+    if (original.size() > 5 * 1024 * 1024 || original.find('\0') != string::npos)
+    {
+        return {false, "File is too large or binary; only text files up to 5 MiB can be edited."};
+    }
+
+    const vector<string> current_lines = split_file_lines(original);
+    const vector<string> expected_lines = split_file_lines(expected_block.content);
+    const vector<string> replacement_lines = split_file_lines(replacement_block.content);
+    if (last_line > current_lines.size() || expected_lines.size() != last_line - first_line + 1)
+    {
+        return {false, "Edit range does not match the current file line count or .expect block."};
+    }
+    if (!equal(expected_lines.begin(), expected_lines.end(), current_lines.begin() + static_cast<ptrdiff_t>(first_line - 1)))
+    {
+        return {false, "File changed or .expect text does not match those lines. Read the file again before editing."};
+    }
+
+    vector<string> updated_lines;
+    updated_lines.reserve(current_lines.size() - expected_lines.size() + replacement_lines.size());
+    updated_lines.insert(updated_lines.end(), current_lines.begin(), current_lines.begin() + static_cast<ptrdiff_t>(first_line - 1));
+    updated_lines.insert(updated_lines.end(), replacement_lines.begin(), replacement_lines.end());
+    updated_lines.insert(updated_lines.end(), current_lines.begin() + static_cast<ptrdiff_t>(last_line), current_lines.end());
+
+    const string newline = original.find("\r\n") != string::npos ? "\r\n" : "\n";
+    const bool had_trailing_newline = !original.empty() && original.back() == '\n';
+    string updated;
+    for (size_t index = 0; index < updated_lines.size(); index++)
+    {
+        if (index > 0)
+        {
+            updated += newline;
+        }
+        updated += updated_lines[index];
+    }
+    if (had_trailing_newline && !updated_lines.empty())
+    {
+        updated += newline;
+    }
+
+    const auto timestamp = chrono::steady_clock::now().time_since_epoch().count();
+    fs::path temporary = target;
+    temporary += ".agent-edit-" + to_string(timestamp) + ".tmp";
+    const fs::file_status temporary_status = fs::symlink_status(temporary, error);
+    if (!error && fs::exists(temporary_status))
+    {
+        return {false, "Temporary edit file already exists; refusing to overwrite it."};
+    }
+
+    ofstream temporary_file(temporary, ios::binary | ios::out | ios::trunc);
+    if (!temporary_file)
+    {
+        return {false, "Cannot create temporary file for safe editing."};
+    }
+    temporary_file.write(updated.data(), static_cast<streamsize>(updated.size()));
+    temporary_file.close();
+    if (!temporary_file)
+    {
+        fs::remove(temporary, error);
+        return {false, "Failed while writing temporary edit file; original file was not changed."};
+    }
+
+    error.clear();
+    const fs::perms original_permissions = fs::status(target, error).permissions();
+    if (!error)
+    {
+        fs::permissions(temporary, original_permissions, fs::perm_options::replace, error);
+    }
+    if (!error)
+    {
+        fs::rename(temporary, target, error);
+    }
+    if (error)
+    {
+        error_code cleanup_error;
+        fs::remove(temporary, cleanup_error);
+        return {false, "Could not atomically replace the file; original file was preserved: " + error.message()};
+    }
+    return {true, "Edited " + filename + " lines " + to_string(first_line) + "-" + to_string(last_line)};
+}
+
 FileResult remove_sandbox_file(const string &filename)
 {
     if (!is_safe_filename(filename) || filename == "main.cpp")
@@ -1029,7 +1360,20 @@ CODE_CONTENT
 - Never create a file named main.cpp or use the basename 'main' for C++ files. This restriction is about the filename, not the C++ main() function.
 - If you need the contents of an existing file, output only: .read: 'FILENAME.EXTENSION'
 - .read can access regular files directly inside the configured sandbox only. Never request main.cpp, parent paths, absolute paths, or files outside the sandbox.
+- File contents returned by .read include 1-based line numbers. Do not copy the line-number prefixes into source code.
 - After a .read request, the file contents will be sent to you as the next user message. Then answer the user's request or produce a file command.
+- To edit an existing file, you MUST first use .read on that file, then output only this exact structure:
+.edit: 'FILENAME.EXTENSION' lines START-END
+.expect ```text
+EXACT CURRENT LINES, WITHOUT THE DISPLAYED LINE-NUMBER PREFIXES
+```
+.with ```LANGUAGE_MATCHING_THE_FILE_EXTENSION
+REPLACEMENT LINES
+```
+- START and END are 1-based inclusive line numbers from the latest .read output. The .expect block must contain exactly those current lines, preserving every space and character. The .with block replaces that range and may contain a different number of lines.
+- Make one .edit command per response. Never guess line numbers or expected text. If the file has changed, the range is invalid, or the exact old lines are uncertain, .read the file again instead of attempting an edit.
+- If either fenced block contains a line made of backticks, use an outer fence with more backticks than the longest such line.
+- Edit only files directly inside the configured sandbox. Never edit main.cpp, symlinks, binary files, or files outside the sandbox. The system verifies the expected lines before replacing anything; if verification fails, no file changes are made.
 - If the user explicitly asks to delete one or more files, output only one .rm command per file on separate lines.
 - Each .rm command uses this format: .rm: 'FILENAME.EXTENSION'
 - .rm can delete regular files directly inside the configured sandbox only. Never request main.cpp, parent paths, absolute paths, directories, or files outside the sandbox.
@@ -1177,11 +1521,18 @@ int main() {
                 break;
             }
 
-            response = g.askAI("Contents of sandbox file " + filename + ":\n" +
-                               file_content + "\nUse this file content to answer the user's request.");
+            response = g.askAI("Contents of sandbox file " + filename + " with 1-based line numbers:\n" +
+                               number_file_lines(file_content) +
+                               "Use the line numbers only to identify edit ranges. Never include the line-number prefixes in code. "
+                               "Use .expect with exact original lines when editing.");
         }
 
-        if (!response.empty() && response.find(".name:") != string::npos)
+        if (!response.empty() && response.find(".edit:") != string::npos)
+        {
+            const FileResult edit_result = edit_sandbox_file(response);
+            print_notice(edit_result.message, edit_result.success);
+        }
+        else if (!response.empty() && response.find(".name:") != string::npos)
         {
             const vector<FileResult> write_results = write_file_commands(response);
             for (const FileResult &write_result : write_results)

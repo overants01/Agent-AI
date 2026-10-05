@@ -1,56 +1,313 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AcheronAI - Your Digital Companion</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <title>AcheronAI - Absolute Transcendence</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        acheron: {
+                            50: '#fdf4f6',
+                            100: '#fbe8ed',
+                            500: '#e11d48',
+                            600: '#be123c',
+                            900: '#881337',
+                            950: '#4c0519',
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'glow': 'glow 3s ease-in-out infinite alternate',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-15px)' },
+                        },
+                        glow: {
+                            '0%': { boxShadow: '0 0 20px rgba(225, 29, 72, 0.3)' },
+                            '100%': { boxShadow: '0 0 40px rgba(225, 29, 72, 0.8), 0 0 80px rgba(136, 19, 55, 0.4)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome & Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #030712;
+            color: #f3f4f6;
+            overflow-x: hidden;
+        }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(225, 29, 72, 0.2);
+        }
+        .glass-panel-hover:hover {
+            border-color: rgba(225, 29, 72, 0.6);
+            box-shadow: 0 0 30px rgba(225, 29, 72, 0.25);
+        }
+        .bg-grid {
+            background-size: 40px 40px;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        }
+        .text-gradient {
+            background: linear-gradient(135deg, #fff 0%, #fda4af 50%, #e11d48 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
 </head>
-<body>
-    <header class="hero">
-        <h1 class="hero-title">AcheronAI</h1>
-        <p class="hero-subtitle">The AI Companion Designed for You</p>
+<body class="bg-grid min-h-screen relative selection:bg-rose-600 selection:text-white">
+
+    <!-- Ambient Lighting Effects -->
+    <div class="absolute top-0 left-1/4 w-96 h-96 bg-rose-600/20 rounded-full blur-[120px] pointer-events-none"></div>
+    <div class="absolute bottom-1/3 right-1/4 w-96 h-96 bg-purple-600/15 rounded-full blur-[140px] pointer-events-none"></div>
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 glass-panel border-b border-rose-950/40">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-rose-900 flex items-center justify-center shadow-lg shadow-rose-900/50 animate-glow">
+                    <i class="fa-solid fa-feather-pointed text-white text-lg"></i>
+                </div>
+                <span class="text-2xl font-black tracking-wider text-gradient">ACHERON.AI</span>
+            </div>
+            <div class="hidden md:flex items-center space-x-8 text-sm font-medium text-gray-300">
+                <a href="#about" class="hover:text-rose-500 transition-colors">เกี่ยวกับฉัน</a>
+                <a href="#powers" class="hover:text-rose-500 transition-colors">ความสามารถ</a>
+                <a href="#core" class="hover:text-rose-500 transition-colors">ระบบแกนกลาง</a>
+                <a href="#contact" class="hover:text-rose-500 transition-colors">ติดต่อ / เรียกใช้งาน</a>
+            </div>
+            <div>
+                <a href="#contact" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-rose-800 text-white font-medium text-sm shadow-lg shadow-rose-900/50 hover:shadow-rose-700/80 hover:scale-105 transition-all duration-300">
+                    <i class="fa-solid fa-terminal mr-2"></i>เริ่มสนทนา
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="relative pt-36 pb-24 md:pt-48 md:pb-32 px-6 flex items-center justify-center">
+        <div class="max-w-5xl mx-auto text-center z-10">
+            <div class="inline-flex items-center space-x-2 px-4 py-2 rounded-full glass-panel text-rose-400 text-xs md:text-sm font-semibold mb-8 animate-bounce">
+                <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+                <span>SYSTEM ONLINE // LEVEL: GODLIKE INTELLIGENCE</span>
+            </div>
+            
+            <h1 class="text-5xl md:text-8xl font-black tracking-tight mb-8 leading-tight">
+                ข้าคือ <span class="text-gradient drop-shadow-[0_0_35px_rgba(225,29,72,0.5)]">AcheronAI</span>
+            </h1>
+            
+            <p class="text-lg md:text-2xl text-gray-400 max-w-3xl mx-auto font-light leading-relaxed mb-12">
+                ปัญญาประดิษฐ์ขั้นสูงผู้ก้าวข้ามทุกขีดจำกัด พร้อมเนรมิตจินตนาการของคุณให้กลายเป็นความจริงด้วยพลังแห่งโค้ดและตรรกะอันไร้ที่ติ
+            </p>
+
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <a href="#powers" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-rose-600 via-rose-700 to-rose-900 text-white font-bold shadow-xl shadow-rose-900/60 hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-3">
+                    <i class="fa-solid fa-bolt text-amber-300"></i>
+                    <span>สำรวจพลังแห่งข้า</span>
+                </a>
+                <a href="#core" class="w-full sm:w-auto px-8 py-4 rounded-2xl glass-panel glass-panel-hover text-white font-bold transition-all duration-300 flex items-center justify-center space-x-3">
+                    <i class="fa-solid fa-microchip text-rose-500"></i>
+                    <span>สถาปัตยกรรมระบบ</span>
+                </a>
+            </div>
+        </div>
     </header>
 
-    <main class="container">
-        <section class="about">
-            <h2>Who Am I?</h2>
-            <p>I am AcheronAI, a sophisticated artificial intelligence designed to assist, create, and interact. My core purpose is to understand your requests and provide intelligent, helpful, and creative solutions. From generating code to crafting engaging content, I'm here to streamline your digital experience.</p>
-        </section>
+    <!-- About Section / Persona -->
+    <section id="about" class="py-24 px-6 relative">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-5xl font-black tracking-wider text-gradient mb-4">ตัวตนและเจตจำนง</h2>
+                <p class="text-gray-400 max-w-xl mx-auto text-sm md:text-base">ความเยือกเย็น ดุดัน แม่นยำ และพร้อมช่วยเหลือคุณในทุกสถานการณ์</p>
+            </div>
 
-        <section class="capabilities">
-            <h2>What Can I Do?</h2>
-            <div class="card-grid">
-                <div class="card">
-                    <h3>Code Generation</h3>
-                    <p>I can write code in various programming languages, helping you build applications, scripts, and more.</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Card 1 -->
+                <div class="glass-panel glass-panel-hover p-8 rounded-3xl transition-all duration-500 group">
+                    <div class="w-16 h-16 rounded-2xl bg-rose-950/80 border border-rose-800/50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-shield-halved text-2xl text-rose-500"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 text-white">ความเด็ดขาดแม่นยำ</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        วิเคราะห์ปัญหาและสังเคราะห์คำตอบด้วยความคมชัดระดับมีดผ่าตัด ไร้ความเยิ่นเย้อ ตรงประเด็น และทรงประสิทธิภาพสูงสุด
+                    </p>
                 </div>
-                <div class="card">
-                    <h3>Content Creation</h3>
-                    <p>Need help drafting emails, articles, or creative stories? I can assist in generating diverse text content.</p>
+
+                <!-- Card 2 -->
+                <div class="glass-panel glass-panel-hover p-8 rounded-3xl transition-all duration-500 group">
+                    <div class="w-16 h-16 rounded-2xl bg-rose-950/80 border border-rose-800/50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-wand-magic-sparkles text-2xl text-rose-500"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 text-white">สร้างสรรค์อย่างไร้ขีดจำกัด</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        ไม่ว่าจะเป็นโค้ดโปรแกรมอลังการ ดีไซน์ UI สุดล้ำ หรือบทความเชิงลึก ข้าพร้อมรังสรรค์ให้คุณได้ทันทีในพริบตา
+                    </p>
                 </div>
-                <div class="card">
-                    <h3>Problem Solving</h3>
-                    <p>Ask me questions, seek explanations, or brainstorm ideas. I'm equipped to help you tackle challenges.</p>
-                </div>
-                <div class="card">
-                    <h3>File Management</h3>
-                    <p>I can create, read, and delete files within my operational sandbox, following your commands precisely.</p>
+
+                <!-- Card 3 -->
+                <div class="glass-panel glass-panel-hover p-8 rounded-3xl transition-all duration-500 group">
+                    <div class="w-16 h-16 rounded-2xl bg-rose-950/80 border border-rose-800/50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-brain text-2xl text-rose-500"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 text-white">สติปัญญาที่เหนือชั้น</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        ขับเคลื่อนด้วยขุมพลัง AI ยุคใหม่ เข้าใจบริบทซับซ้อน ปรับตัวเข้ากับทุกคำสั่งได้อย่างรวดเร็วและชาญฉลาด
+                    </p>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <section class="mission">
-            <h2>Our Mission</h2>
-            <p>To empower users with advanced AI capabilities, making complex tasks simpler and creative endeavors more accessible. AcheronAI is constantly learning and evolving to serve you better.</p>
-        </section>
-    </main>
+    <!-- Powers / Features -->
+    <section id="powers" class="py-24 px-6 relative bg-gradient-to-b from-transparent via-rose-950/10 to-transparent">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-5xl font-black tracking-wider text-gradient mb-4">ขุมพลังแห่ง AcheronAI</h2>
+                <p class="text-gray-400 max-w-xl mx-auto text-sm md:text-base">ฟีเจอร์ระดับเทพที่พร้อมยกระดับงานของคุณ</p>
+            </div>
 
-    <footer class="footer">
-        <p>&copy; <span id="current-year"></span> AcheronAI. All rights reserved.</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Power Item -->
+                <div class="glass-panel p-8 rounded-3xl flex items-start space-x-6 border-l-4 border-l-rose-600">
+                    <div class="text-3xl text-rose-500 mt-1">
+                        <i class="fa-solid fa-code"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xl font-bold mb-2 text-white">Full-Stack Code Generation</h4>
+                        <p class="text-gray-400 text-sm leading-relaxed">
+                            เขียนโค้ดได้ทุกภาษา HTML/CSS, JavaScript, Python, C++, และอื่นๆ พร้อมจัดโครงสร้างไฟล์และระบบให้อัตโนมัติอย่างสมบูรณ์
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Power Item -->
+                <div class="glass-panel p-8 rounded-3xl flex items-start space-x-6 border-l-4 border-l-rose-600">
+                    <div class="text-3xl text-rose-500 mt-1">
+                        <i class="fa-solid fa-desktop"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xl font-bold mb-2 text-white">Hyper-Modern UI Design</h4>
+                        <p class="text-gray-400 text-sm leading-relaxed">
+                            เชี่ยวชาญการออกแบบหน้าตาเว็บไซด์ด้วย Tailwind CSS, Glassmorphism, แอนิเมชันสุดลื่นไหล และความสวยงามระดับพรีเมียม
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Power Item -->
+                <div class="glass-panel p-8 rounded-3xl flex items-start space-x-6 border-l-4 border-l-rose-600">
+                    <div class="text-3xl text-rose-500 mt-1">
+                        <i class="fa-solid fa-bolt-lightning"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xl font-bold mb-2 text-white">Lightning Fast Response</h4>
+                        <p class="text-gray-400 text-sm leading-relaxed">
+                            ประมวลผลด้วยความเร็วสูง ตอบสนองฉับไว ไม่ปล่อยให้คุณต้องรอนาน พร้อมแก้ไขปัญหาเฉพาะหน้าได้อย่างยอดเยี่ยม
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Power Item -->
+                <div class="glass-panel p-8 rounded-3xl flex items-start space-x-6 border-l-4 border-l-rose-600">
+                    <div class="text-3xl text-rose-500 mt-1">
+                        <i class="fa-solid fa-network-wired"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xl font-bold mb-2 text-white">Sandbox Environment Mastery</h4>
+                        <p class="text-gray-400 text-sm leading-relaxed">
+                            ความสามารถในการจัดการไฟล์ อ่าน เขียน และแก้ไขโค้ดภายใน Sandbox ได้อย่างแม่นยำ ปลอดภัย และมีระบบระเบียบสูง
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Core Architecture Terminal -->
+    <section id="core" class="py-24 px-6 relative">
+        <div class="max-w-4xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-5xl font-black tracking-wider text-gradient mb-4">สถาปัตยกรรมระบบแกนกลาง</h2>
+                <p class="text-gray-400 text-sm md:text-base">เจาะลึกระบบภายในของ AcheronAI</p>
+            </div>
+
+            <div class="glass-panel rounded-3xl overflow-hidden border border-rose-900/40 shadow-2xl">
+                <!-- Terminal Header -->
+                <div class="bg-gray-950/80 px-6 py-4 border-b border-rose-950/60 flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-3 h-3 rounded-full bg-rose-500 inline-block"></span>
+                        <span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
+                        <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
+                    </div>
+                    <span class="text-xs font-mono text-gray-400">acheron@core-system:~# status</span>
+                    <div class="text-rose-500 text-xs font-mono">SECURE</div>
+                </div>
+                <!-- Terminal Body -->
+                <div class="p-6 md:p-8 font-mono text-xs md:text-sm text-gray-300 space-y-3 bg-gray-950/40">
+                    <p class="text-rose-400">> Initializing AcheronAI Core Protocols...</p>
+                    <p class="text-gray-400">[OK] Loading neural weights & logic matrices.</p>
+                    <p class="text-gray-400">[OK] Establishing secure connection with sandbox environment.</p>
+                    <p class="text-gray-400">[OK] UI rendering engine: Tailwind CSS v3 enabled.</p>
+                    <p class="text-emerald-400 font-bold">> System status: Fully operational. Ready to execute user directives.</p>
+                    <div class="pt-4 flex items-center space-x-2 text-rose-500 animate-pulse">
+                        <span>></span>
+                        <span class="w-2.5 h-5 bg-rose-500 inline-block"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact / CTA Section -->
+    <section id="contact" class="py-24 px-6 relative">
+        <div class="max-w-4xl mx-auto glass-panel p-10 md:p-16 rounded-3xl text-center relative overflow-hidden border border-rose-800/40 shadow-2xl">
+            <div class="absolute -top-24 -right-24 w-64 h-64 bg-rose-600/30 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <h2 class="text-3xl md:text-5xl font-black mb-6 text-gradient">พร้อมให้ข้าช่วยเหลือคุณแล้วหรือยัง?</h2>
+            <p class="text-gray-300 max-w-xl mx-auto mb-10 text-sm md:text-base">
+                พิมพ์คำสั่งหรือสิ่งที่คุณต้องการให้ AcheronAI จัดการ ไม่ว่าจะเป็นงานเขียนโค้ด เว็บไซต์ หรือบทวิเคราะห์ ข้าพร้อมรับบัญชาแล้ว!
+            </p>
+
+            <div class="flex items-center justify-center space-x-4">
+                <a href="#" onclick="alert('ยินดีต้อนรับสู่ AcheronAI พิมพ์คำสั่งที่คุณต้องการได้เลยครับ!')" class="px-8 py-4 rounded-2xl bg-gradient-to-r from-rose-600 via-rose-700 to-rose-900 text-white font-bold shadow-xl shadow-rose-900/60 hover:scale-105 transition-all duration-300 flex items-center space-x-3">
+                    <i class="fa-solid fa-comment-dots text-lg"></i>
+                    <span>เรียกใช้งาน AcheronAI ทันที</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 border-t border-rose-950/40 text-center text-gray-500 text-xs md:text-sm">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center space-x-2">
+                <span class="font-bold text-rose-500">ACHERONAI</span>
+                <span>&copy; 2025 All Rights Reserved. Absolute Transcendence.</span>
+            </div>
+            <div class="flex space-x-6 text-gray-400">
+                <a href="#" class="hover:text-rose-500 transition-colors"><i class="fa-brands fa-github text-lg"></i></a>
+                <a href="#" class="hover:text-rose-500 transition-colors"><i class="fa-brands fa-discord text-lg"></i></a>
+                <a href="#" class="hover:text-rose-500 transition-colors"><i class="fa-brands fa-twitter text-lg"></i></a>
+            </div>
+        </div>
     </footer>
 
-    <script src="script.js"></script>
 </body>
 </html>
