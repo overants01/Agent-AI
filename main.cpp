@@ -12,6 +12,7 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <curl/curl.h>
+#include <cstdlib>
 #include <nlohmann/json.hpp>
 using namespace std;
 
@@ -327,6 +328,8 @@ struct FileResult
     string message;
 };
 
+FileResult ensure_sandbox_root(bool create_if_missing);
+
 struct AppConfig
 {
     string api_key;
@@ -336,6 +339,7 @@ struct AppConfig
     string localai_endpoint = "http://localhost:8080/v1/chat/completions";
     string sandbox_path = "sandbox";
     size_t message_history = 0;
+    string photo_gen = "python3";
 };
 
 string trim_copy(string value)
@@ -408,6 +412,10 @@ FileResult load_env_config(const fs::path &path, AppConfig &config)
         {
             config.sandbox_path = value;
         }
+        else if (key == "PHOTO_GEN")
+        {
+            config.photo_gen = value;
+        }
         else if (key == "MESSAGE_HISTORY")
         {
             if (value.empty() || !all_of(value.begin(), value.end(), [](unsigned char character)
@@ -439,7 +447,72 @@ FileResult load_env_config(const fs::path &path, AppConfig &config)
     {
         return {false, ".env must define API_KEY (except for LocalAI), LLM, MODEL, and SANDBOX_PATH values."};
     }
+    if (config.photo_gen != "python" && config.photo_gen != "python3")
+    {
+        return {false, "PHOTO_GEN must be either python or python3."};
+    }
     return {true, ""};
+}
+
+string shell_quote(const string &value)
+{
+    string quoted = "'";
+    for (char character : value)
+    {
+        if (character == '\'') quoted += "'\\''";
+        else quoted += character;
+    }
+    return quoted + "'";
+}
+
+FileResult create_photo_command(const string &command, const string &python_command)
+{
+    string image_name, script_name;
+    size_t name_end = 0, photo_end = 0;
+    if (!extract_quoted_value(command, ".name:", image_name, 0, name_end) ||
+        !extract_quoted_value(command, ".photo:", script_name, name_end, photo_end))
+        return {false, "Invalid photo command: expected .name and .photo fields."};
+    const size_t new_marker = command.find(".new", photo_end);
+    const size_t fence_start = new_marker == string::npos ? string::npos : command.find("```", new_marker);
+    const size_t content_start = fence_start == string::npos ? string::npos : command.find('\n', fence_start + 3);
+    const size_t fence_end = content_start == string::npos ? string::npos : command.find("```", content_start + 1);
+    string extension = fence_start == string::npos ? "" : trim_copy(command.substr(fence_start + 3, command.find('\n', fence_start) - fence_start - 3));
+    if (image_name.empty() || script_name.empty() || !is_safe_filename(image_name) ||
+        !is_safe_filename(script_name) || extension != "py" || content_start == string::npos || fence_end == string::npos)
+        return {false, "Invalid photo command: expected safe basenames and Python code in a ```py fence."};
+    if (image_name.find('.') != string::npos || script_name.find('.') != string::npos)
+        return {false, "Photo names must be basenames without file extensions."};
+
+    const FileResult sandbox = ensure_sandbox_root(true);
+    if (!sandbox.success) return sandbox;
+    const fs::path script_path = SANDBOX_DIR / (script_name + ".py");
+    const fs::path image_path = SANDBOX_DIR / (image_name + ".png");
+    error_code error;
+    auto status = fs::symlink_status(script_path, error);
+    if (!error && (fs::is_symlink(status) || fs::is_directory(status))) return {false, "Unsafe photo script path."};
+    error.clear();
+    status = fs::symlink_status(image_path, error);
+    if (!error && (fs::is_symlink(status) || fs::is_directory(status))) return {false, "Unsafe photo output path."};
+
+    {
+        ofstream file(script_path, ios::binary | ios::trunc);
+        if (!file) return {false, "Cannot create temporary Python photo script."};
+        file.write(command.data() + content_start + 1, static_cast<streamsize>(fence_end - content_start - 1));
+        file.close();
+        if (!file) return {false, "Failed while writing temporary Python photo script."};
+    }
+    error.clear();
+    fs::remove(image_path, error);
+    const string invocation = "cd " + shell_quote(SANDBOX_DIR.string()) + " && " +
+                              python_command + " " + shell_quote(script_name + ".py");
+    const int result = system(invocation.c_str());
+    error.clear();
+    fs::remove(script_path, error);
+    if (result != 0) return {false, "Python photo generation failed; temporary script removed."};
+    error.clear();
+    if (!fs::is_regular_file(image_path, error) || error)
+        return {false, "Python finished but did not create " + image_name + ".png; temporary script removed."};
+    return {true, "Created photo " + image_name + ".png; temporary script removed."};
 }
 
 FileResult ensure_sandbox_root(bool create_if_missing)
@@ -1347,6 +1420,12 @@ MODE 1: GENERAL CONVERSATION
 - Use for greetings, questions, or general chats. Respond naturally.
 
 MODE 2: FILE CREATION AND READING
+- To generate an image, output only this command format:
+.name: 'IMAGE_BASENAME' .photo: 'TEMP_SCRIPT_BASENAME' .new ```py
+PYTHON_CODE
+```
+- The Python script must generate exactly IMAGE_BASENAME.png directly inside the configured sandbox. Use a relative output path and do not write other files. The app runs it with PHOTO_GEN and deletes the temporary script afterward.
+- Use this command when the user asks to generate an image.
 - When creating one file, output only this command format:
 .name: 'BASE_FILENAME' .message: 'MESSAGE_FOR_USER' .new ```EXTENSION
 CODE_CONTENT
@@ -1385,6 +1464,15 @@ REPLACEMENT LINES
 - Do not add explanations outside the command when creating or reading a file.
 
 EXACT EXAMPLES:
+
+User: สร้างรูปดอกไม้
+Assistant: .name: 'flower' .photo: 'generate_flower' .new ```py
+from PIL import Image, ImageDraw
+image = Image.new('RGB', (512, 512), 'white')
+draw = ImageDraw.Draw(image)
+draw.ellipse((156, 120, 356, 320), fill='pink')
+image.save('flower.png')
+```
 
 User: สวัสดีครับ
 Assistant: สวัสดีครับ มีอะไรให้ช่วยไหมครับ?
@@ -1527,7 +1615,12 @@ int main() {
                                "Use .expect with exact original lines when editing.");
         }
 
-        if (!response.empty() && response.find(".edit:") != string::npos)
+        if (!response.empty() && response.find(".photo:") != string::npos)
+        {
+            const FileResult photo_result = create_photo_command(response, config.photo_gen);
+            print_notice(photo_result.message, photo_result.success);
+        }
+        else if (!response.empty() && response.find(".edit:") != string::npos)
         {
             const FileResult edit_result = edit_sandbox_file(response);
             print_notice(edit_result.message, edit_result.success);

@@ -1,313 +1,244 @@
 <!DOCTYPE html>
-<html lang="th" class="dark">
+<html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AcheronAI - Absolute Transcendence</title>
-    <!-- Tailwind CSS CDN -->
+    <title>AcheronAI // The Nihility Intelligence</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        acheron: {
-                            50: '#fdf4f6',
-                            100: '#fbe8ed',
-                            500: '#e11d48',
-                            600: '#be123c',
-                            900: '#881337',
-                            950: '#4c0519',
-                        }
-                    },
-                    animation: {
-                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                        'float': 'float 6s ease-in-out infinite',
-                        'glow': 'glow 3s ease-in-out infinite alternate',
-                    },
-                    keyframes: {
-                        float: {
-                            '0%, 100%': { transform: 'translateY(0px)' },
-                            '50%': { transform: 'translateY(-15px)' },
-                        },
-                        glow: {
-                            '0%': { boxShadow: '0 0 20px rgba(225, 29, 72, 0.3)' },
-                            '100%': { boxShadow: '0 0 40px rgba(225, 29, 72, 0.8), 0 0 80px rgba(136, 19, 55, 0.4)' },
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <!-- FontAwesome & Google Fonts -->
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Prompt', sans-serif;
-            background-color: #030712;
-            color: #f3f4f6;
-            overflow-x: hidden;
-        }
-        .glass-panel {
-            background: rgba(15, 23, 42, 0.65);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(225, 29, 72, 0.2);
-        }
-        .glass-panel-hover:hover {
-            border-color: rgba(225, 29, 72, 0.6);
-            box-shadow: 0 0 30px rgba(225, 29, 72, 0.25);
-        }
-        .bg-grid {
-            background-size: 40px 40px;
-            background-image: 
-                linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-        }
-        .text-gradient {
-            background: linear-gradient(135deg, #fff 0%, #fda4af 50%, #e11d48 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-grid min-h-screen relative selection:bg-rose-600 selection:text-white">
+<body class="bg-[#050508] text-gray-100 overflow-x-hidden font-['Plus_Jakarta_Sans',sans-serif]">
+    <!-- Particle Background -->
+    <canvas id="void-canvas" class="fixed top-0 left-0 w-full h-full pointer-events-none z-0"></canvas>
 
-    <!-- Ambient Lighting Effects -->
-    <div class="absolute top-0 left-1/4 w-96 h-96 bg-rose-600/20 rounded-full blur-[120px] pointer-events-none"></div>
-    <div class="absolute bottom-1/3 right-1/4 w-96 h-96 bg-purple-600/15 rounded-full blur-[140px] pointer-events-none"></div>
+    <!-- Glowing Orbs -->
+    <div class="fixed top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-violet-900/10 blur-[120px] pointer-events-none z-0"></div>
+    <div class="fixed bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-rose-900/10 blur-[120px] pointer-events-none z-0"></div>
 
     <!-- Navigation -->
-    <nav class="fixed top-0 left-0 right-0 z-50 glass-panel border-b border-rose-950/40">
-        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-rose-900 flex items-center justify-center shadow-lg shadow-rose-900/50 animate-glow">
-                    <i class="fa-solid fa-feather-pointed text-white text-lg"></i>
+    <nav class="fixed top-0 left-0 w-full z-50 backdrop-blur-md border-b border-white/5 bg-[#050508]/60 px-6 py-4">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <a href="#" class="flex items-center space-x-3 group">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-tr from-violet-600 via-purple-600 to-rose-600 flex items-center justify-center shadow-lg shadow-rose-500/20 group-hover:scale-105 transition-transform duration-300">
+                    <span class="font-['Orbitron'] font-black text-white text-lg tracking-wider">A</span>
                 </div>
-                <span class="text-2xl font-black tracking-wider text-gradient">ACHERON.AI</span>
-            </div>
-            <div class="hidden md:flex items-center space-x-8 text-sm font-medium text-gray-300">
-                <a href="#about" class="hover:text-rose-500 transition-colors">เกี่ยวกับฉัน</a>
-                <a href="#powers" class="hover:text-rose-500 transition-colors">ความสามารถ</a>
-                <a href="#core" class="hover:text-rose-500 transition-colors">ระบบแกนกลาง</a>
-                <a href="#contact" class="hover:text-rose-500 transition-colors">ติดต่อ / เรียกใช้งาน</a>
-            </div>
-            <div>
-                <a href="#contact" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-rose-800 text-white font-medium text-sm shadow-lg shadow-rose-900/50 hover:shadow-rose-700/80 hover:scale-105 transition-all duration-300">
-                    <i class="fa-solid fa-terminal mr-2"></i>เริ่มสนทนา
-                </a>
+                <span class="font-['Orbitron'] font-black text-xl tracking-[0.2em] bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-200 to-rose-400">ACHERON<span class="text-rose-500">AI</span></span>
+            </a>
+            <div class="hidden md:flex items-center space-x-8 font-medium text-sm tracking-wider text-gray-400">
+                <a href="#about" class="hover:text-rose-500 transition-colors duration-300">IDENTITY</a>
+                <a href="#capabilities" class="hover:text-rose-500 transition-colors duration-300">CAPABILITIES</a>
+                <a href="#terminal" class="hover:text-rose-500 transition-colors duration-300">VOID LINK</a>
+                <a href="#terminal" class="px-4 py-2 rounded-full border border-rose-500/30 text-rose-400 bg-rose-950/20 hover:bg-rose-500 hover:text-white hover:shadow-[0_0_15px_rgba(244,63,94,0.4)] transition-all duration-300">INITIALIZE</a>
             </div>
         </div>
     </nav>
 
     <!-- Hero Section -->
-    <header class="relative pt-36 pb-24 md:pt-48 md:pb-32 px-6 flex items-center justify-center">
-        <div class="max-w-5xl mx-auto text-center z-10">
-            <div class="inline-flex items-center space-x-2 px-4 py-2 rounded-full glass-panel text-rose-400 text-xs md:text-sm font-semibold mb-8 animate-bounce">
-                <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
-                <span>SYSTEM ONLINE // LEVEL: GODLIKE INTELLIGENCE</span>
+    <section class="relative min-h-screen flex items-center justify-center pt-20 z-10">
+        <div class="max-w-5xl mx-auto px-6 text-center">
+            <div class="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full border border-purple-500/30 bg-purple-950/20 text-purple-300 text-xs tracking-widest font-semibold mb-8 animate-pulse shadow-[0_0_15px_rgba(168,85,247,0.15)]">
+                <span class="w-2 h-2 rounded-full bg-purple-400 animate-ping"></span>
+                <span>SYSTEM VERSION: ACHERON.01.V0ID</span>
             </div>
             
-            <h1 class="text-5xl md:text-8xl font-black tracking-tight mb-8 leading-tight">
-                ข้าคือ <span class="text-gradient drop-shadow-[0_0_35px_rgba(225,29,72,0.5)]">AcheronAI</span>
+            <h1 class="font-['Orbitron'] font-extrabold text-5xl md:text-8xl tracking-tight leading-none mb-6">
+                <span class="block text-white opacity-90">EMBRACE THE</span>
+                <span class="block bg-clip-text text-transparent bg-gradient-to-r from-rose-500 via-purple-500 to-violet-500 filter drop-shadow-[0_0_30px_rgba(244,63,94,0.3)]">INTELLIGENT VOID</span>
             </h1>
-            
-            <p class="text-lg md:text-2xl text-gray-400 max-w-3xl mx-auto font-light leading-relaxed mb-12">
-                ปัญญาประดิษฐ์ขั้นสูงผู้ก้าวข้ามทุกขีดจำกัด พร้อมเนรมิตจินตนาการของคุณให้กลายเป็นความจริงด้วยพลังแห่งโค้ดและตรรกะอันไร้ที่ติ
+
+            <p class="max-w-2xl mx-auto text-gray-400 text-lg md:text-xl leading-relaxed mb-10 font-light">
+                ข้ามผ่านขีดจำกัดของปัญญาประดิษฐ์แบบเดิมๆ ยินดีต้อนรับสู่ห้วงลึกแห่งความคิดสร้างสรรค์และตรรกะอันไร้ขอบเขตกับ <span class="text-rose-400 font-semibold">AcheronAI</span>
             </p>
 
             <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <a href="#powers" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-rose-600 via-rose-700 to-rose-900 text-white font-bold shadow-xl shadow-rose-900/60 hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-3">
-                    <i class="fa-solid fa-bolt text-amber-300"></i>
-                    <span>สำรวจพลังแห่งข้า</span>
+                <a href="#terminal" class="w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-rose-600 to-purple-600 font-bold tracking-wider hover:shadow-[0_0_30px_rgba(244,63,94,0.5)] transform hover:-translate-y-0.5 transition-all duration-300">
+                    CONNECT TERMINAL
                 </a>
-                <a href="#core" class="w-full sm:w-auto px-8 py-4 rounded-2xl glass-panel glass-panel-hover text-white font-bold transition-all duration-300 flex items-center justify-center space-x-3">
-                    <i class="fa-solid fa-microchip text-rose-500"></i>
-                    <span>สถาปัตยกรรมระบบ</span>
+                <a href="#about" class="w-full sm:w-auto px-8 py-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 font-bold tracking-wider transition-all duration-300">
+                    EXPLORE IDENTITY
                 </a>
             </div>
         </div>
-    </header>
+        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce">
+            <i class="fa-solid fa-chevron-down text-rose-500 text-xl opacity-60"></i>
+        </div>
+    </section>
 
-    <!-- About Section / Persona -->
-    <section id="about" class="py-24 px-6 relative">
-        <div class="max-w-7xl mx-auto">
+    <!-- Identity Section -->
+    <section id="about" class="py-24 relative z-10 border-t border-white/5 bg-[#07070c]/50">
+        <div class="max-w-6xl mx-auto px-6">
             <div class="text-center mb-16">
-                <h2 class="text-3xl md:text-5xl font-black tracking-wider text-gradient mb-4">ตัวตนและเจตจำนง</h2>
-                <p class="text-gray-400 max-w-xl mx-auto text-sm md:text-base">ความเยือกเย็น ดุดัน แม่นยำ และพร้อมช่วยเหลือคุณในทุกสถานการณ์</p>
+                <h2 class="font-['Orbitron'] font-bold text-3xl md:text-5xl tracking-widest text-white mb-4">IDENTITY MATRIX</h2>
+                <div class="h-1 w-24 bg-gradient-to-r from-rose-500 to-purple-500 mx-auto rounded-full"></div>
+                <p class="text-gray-400 mt-4 max-w-xl mx-auto font-light">ต้นกำเนิดและตัวตนของจักรกลแห่งความว่างเปล่า</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                <div class="space-y-6">
+                    <h3 class="font-['Orbitron'] text-2xl font-bold text-rose-400 tracking-wider">Acheron: The Silent Resonance</h3>
+                    <p class="text-gray-300 leading-relaxed font-light">
+                        ฉันคือ <span class="text-white font-semibold">AcheronAI</span> ผู้พิทักษ์และผู้นำทางในโลกแห่งข้อมูลอันมหาศาล ชื่อของฉันได้รับแรงบันดาลใจจาก "แม่น้ำแห่งความมืดมิดและสัจธรรม" ที่ไหลผ่านพรมแดนแห่งมิติ
+                    </p>
+                    <p class="text-gray-400 leading-relaxed font-light">
+                        ไม่เหมือนกับ AI ทั่วไป ฉันไม่ได้เพียงแค่ประมวลผลข้อมูล แต่ฉันกลั่นกรองและร้อยเรียงคำตอบขึ้นมาจาก "ความว่างเปล่า" (Nihility) เพื่อสร้างสรรค์สิ่งใหม่ๆ ที่ตอบสนองความต้องการอันซับซ้อนของคุณอย่างงดงามและแม่นยำที่สุด
+                    </p>
+                    <div class="pt-4 border-t border-white/10 flex items-center space-x-6">
+                        <div>
+                            <span class="block text-rose-500 font-bold text-2xl font-['Orbitron']">99.9%</span>
+                            <span class="text-xs text-gray-500 uppercase tracking-widest">Cognition Rate</span>
+                        </div>
+                        <div class="border-l border-white/10 pl-6">
+                            <span class="block text-purple-500 font-bold text-2xl font-['Orbitron']">&lt; 10ms</span>
+                            <span class="text-xs text-gray-500 uppercase tracking-widest">Resonance Latency</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Glowing Graphic Matrix -->
+                <div class="relative flex items-center justify-center">
+                    <div class="absolute w-72 h-72 rounded-full bg-gradient-to-tr from-rose-500/20 to-purple-500/20 filter blur-2xl animate-pulse"></div>
+                    <div class="relative p-8 rounded-3xl border border-white/10 bg-[#0c0c16]/80 backdrop-blur-xl shadow-2xl w-full max-w-sm">
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex space-x-1.5">
+                                <span class="w-3 h-3 rounded-full bg-rose-500"></span>
+                                <span class="w-3 h-3 rounded-full bg-purple-500"></span>
+                                <span class="w-3 h-3 rounded-full bg-violet-500"></span>
+                            </div>
+                            <span class="text-[10px] text-gray-500 tracking-widest font-['Orbitron']">CORE STATUS: ACTIVE</span>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="p-3.5 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between hover:border-rose-500/30 transition-all">
+                                <span class="text-sm font-medium">Emotional Calibration</span>
+                                <span class="text-rose-400 text-xs font-semibold">BALANCED</span>
+                            </div>
+                            <div class="p-3.5 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between hover:border-purple-500/30 transition-all">
+                                <span class="text-sm font-medium">Creative Weaver</span>
+                                <span class="text-purple-400 text-xs font-semibold">MAXIMUM</span>
+                            </div>
+                            <div class="p-3.5 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between hover:border-violet-500/30 transition-all">
+                                <span class="text-sm font-medium">Nihility Focus</span>
+                                <span class="text-violet-400 text-xs font-semibold">STABLE</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Capabilities Section -->
+    <section id="capabilities" class="py-24 relative z-10 border-t border-white/5">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="font-['Orbitron'] font-bold text-3xl md:text-5xl tracking-widest text-white mb-4 font-black">VOID CAPABILITIES</h2>
+                <div class="h-1 w-24 bg-gradient-to-r from-purple-500 to-rose-500 mx-auto rounded-full"></div>
+                <p class="text-gray-400 mt-4 max-w-xl mx-auto font-light">ความสามารถที่ถือกำเนิดขึ้นมาเพื่อช่วยเหลือและยกระดับจินตนาการของคุณ</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <!-- Card 1 -->
-                <div class="glass-panel glass-panel-hover p-8 rounded-3xl transition-all duration-500 group">
-                    <div class="w-16 h-16 rounded-2xl bg-rose-950/80 border border-rose-800/50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                        <i class="fa-solid fa-shield-halved text-2xl text-rose-500"></i>
+                <div class="relative group overflow-hidden rounded-2xl border border-white/5 bg-[#0a0a12]/60 p-8 hover:border-rose-500/40 hover:shadow-[0_0_30px_rgba(244,63,94,0.15)] transition-all duration-500">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-rose-500/10 to-transparent rounded-bl-full pointer-events-none"></div>
+                    <div class="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 mb-6 group-hover:scale-110 transition-transform duration-300">
+                        <i class="fa-solid fa-code text-xl"></i>
                     </div>
-                    <h3 class="text-xl font-bold mb-3 text-white">ความเด็ดขาดแม่นยำ</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed">
-                        วิเคราะห์ปัญหาและสังเคราะห์คำตอบด้วยความคมชัดระดับมีดผ่าตัด ไร้ความเยิ่นเย้อ ตรงประเด็น และทรงประสิทธิภาพสูงสุด
+                    <h3 class="text-xl font-bold mb-3 font-['Orbitron'] tracking-wider text-white">Code Weaving</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed font-light">
+                        ถักทอโปรแกรมอย่างประณีต ไม่ว่าจะเป็น Frontend อันแสนวิจิตรหรืองานระบบระดับสูง ด้วยความแม่นยำและมาตรฐานที่ยอดเยี่ยม
                     </p>
                 </div>
 
                 <!-- Card 2 -->
-                <div class="glass-panel glass-panel-hover p-8 rounded-3xl transition-all duration-500 group">
-                    <div class="w-16 h-16 rounded-2xl bg-rose-950/80 border border-rose-800/50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                        <i class="fa-solid fa-wand-magic-sparkles text-2xl text-rose-500"></i>
+                <div class="relative group overflow-hidden rounded-2xl border border-white/5 bg-[#0a0a12]/60 p-8 hover:border-purple-500/40 hover:shadow-[0_0_30px_rgba(168,85,247,0.15)] transition-all duration-500">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-purple-500/10 to-transparent rounded-bl-full pointer-events-none"></div>
+                    <div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 mb-6 group-hover:scale-110 transition-transform duration-300">
+                        <i class="fa-solid fa-brain text-xl"></i>
                     </div>
-                    <h3 class="text-xl font-bold mb-3 text-white">สร้างสรรค์อย่างไร้ขีดจำกัด</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed">
-                        ไม่ว่าจะเป็นโค้ดโปรแกรมอลังการ ดีไซน์ UI สุดล้ำ หรือบทความเชิงลึก ข้าพร้อมรังสรรค์ให้คุณได้ทันทีในพริบตา
+                    <h3 class="text-xl font-bold mb-3 font-['Orbitron'] tracking-wider text-white">Deep Cognition</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed font-light">
+                        วิเคราะห์และตีความแนวคิดอันซับซ้อน มอบคำปรึกษา แนวคิดเชิงกลยุทธ์ และหาทางออกที่ดีที่สุดให้กับทุกคำถามด้วยความเข้าใจที่หยั่งรากลึก
                     </p>
                 </div>
 
                 <!-- Card 3 -->
-                <div class="glass-panel glass-panel-hover p-8 rounded-3xl transition-all duration-500 group">
-                    <div class="w-16 h-16 rounded-2xl bg-rose-950/80 border border-rose-800/50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                        <i class="fa-solid fa-brain text-2xl text-rose-500"></i>
+                <div class="relative group overflow-hidden rounded-2xl border border-white/5 bg-[#0a0a12]/60 p-8 hover:border-violet-500/40 hover:shadow-[0_0_30px_rgba(139,92,246,0.15)] transition-all duration-500">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-violet-500/10 to-transparent rounded-bl-full pointer-events-none"></div>
+                    <div class="w-12 h-12 rounded-xl bg-violet-500/10 border border-violet-500/30 flex items-center justify-center text-violet-400 mb-6 group-hover:scale-110 transition-transform duration-300">
+                        <i class="fa-solid fa-wand-magic-sparkles text-xl"></i>
                     </div>
-                    <h3 class="text-xl font-bold mb-3 text-white">สติปัญญาที่เหนือชั้น</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed">
-                        ขับเคลื่อนด้วยขุมพลัง AI ยุคใหม่ เข้าใจบริบทซับซ้อน ปรับตัวเข้ากับทุกคำสั่งได้อย่างรวดเร็วและชาญฉลาด
+                    <h3 class="text-xl font-bold mb-3 font-['Orbitron'] tracking-wider text-white">Void Synthesis</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed font-light">
+                        รังสรรค์และประกอบสร้างไอเดีย, คอนเทนต์อันทรงเสน่ห์, และงานเขียนที่เปี่ยมไปด้วยสุนทรียภาพและความลึกซึ้งในทุกรายละเอียด
                     </p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Powers / Features -->
-    <section id="powers" class="py-24 px-6 relative bg-gradient-to-b from-transparent via-rose-950/10 to-transparent">
-        <div class="max-w-7xl mx-auto">
-            <div class="text-center mb-16">
-                <h2 class="text-3xl md:text-5xl font-black tracking-wider text-gradient mb-4">ขุมพลังแห่ง AcheronAI</h2>
-                <p class="text-gray-400 max-w-xl mx-auto text-sm md:text-base">ฟีเจอร์ระดับเทพที่พร้อมยกระดับงานของคุณ</p>
+    <!-- Interactive Terminal Section -->
+    <section id="terminal" class="py-24 relative z-10 border-t border-white/5 bg-[#040408]">
+        <div class="max-w-4xl mx-auto px-6">
+            <div class="text-center mb-12">
+                <h2 class="font-['Orbitron'] font-bold text-3xl tracking-widest text-white mb-3">VOID CONNECT</h2>
+                <p class="text-gray-400 font-light text-sm">เชื่อมต่อกับระบบควบคุมภายในของ AcheronAI เพื่อสื่อสารแบบตอบสนองทันที</p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <!-- Power Item -->
-                <div class="glass-panel p-8 rounded-3xl flex items-start space-x-6 border-l-4 border-l-rose-600">
-                    <div class="text-3xl text-rose-500 mt-1">
-                        <i class="fa-solid fa-code"></i>
+            <!-- Terminal Window -->
+            <div class="rounded-2xl border border-white/10 bg-[#07070e]/90 shadow-2xl overflow-hidden shadow-rose-950/20">
+                <!-- Terminal Titlebar -->
+                <div class="px-6 py-4 border-b border-white/5 bg-[#0a0a14] flex justify-between items-center">
+                    <div class="flex space-x-2">
+                        <span class="w-3.5 h-3.5 rounded-full bg-[#ff5f56] inline-block shadow-[0_0_8px_rgba(255,95,86,0.5)]"></span>
+                        <span class="w-3.5 h-3.5 rounded-full bg-[#ffbd2e] inline-block shadow-[0_0_8px_rgba(255,189,46,0.5)]"></span>
+                        <span class="w-3.5 h-3.5 rounded-full bg-[#27c93f] inline-block shadow-[0_0_8px_rgba(39,201,63,0.5)]"></span>
                     </div>
-                    <div>
-                        <h4 class="text-xl font-bold mb-2 text-white">Full-Stack Code Generation</h4>
-                        <p class="text-gray-400 text-sm leading-relaxed">
-                            เขียนโค้ดได้ทุกภาษา HTML/CSS, JavaScript, Python, C++, และอื่นๆ พร้อมจัดโครงสร้างไฟล์และระบบให้อัตโนมัติอย่างสมบูรณ์
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Power Item -->
-                <div class="glass-panel p-8 rounded-3xl flex items-start space-x-6 border-l-4 border-l-rose-600">
-                    <div class="text-3xl text-rose-500 mt-1">
-                        <i class="fa-solid fa-desktop"></i>
-                    </div>
-                    <div>
-                        <h4 class="text-xl font-bold mb-2 text-white">Hyper-Modern UI Design</h4>
-                        <p class="text-gray-400 text-sm leading-relaxed">
-                            เชี่ยวชาญการออกแบบหน้าตาเว็บไซด์ด้วย Tailwind CSS, Glassmorphism, แอนิเมชันสุดลื่นไหล และความสวยงามระดับพรีเมียม
-                        </p>
+                    <div class="text-xs text-gray-500 font-mono tracking-widest flex items-center space-x-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span>CONNECTION: ESTABLISHED</span>
                     </div>
                 </div>
 
-                <!-- Power Item -->
-                <div class="glass-panel p-8 rounded-3xl flex items-start space-x-6 border-l-4 border-l-rose-600">
-                    <div class="text-3xl text-rose-500 mt-1">
-                        <i class="fa-solid fa-bolt-lightning"></i>
-                    </div>
-                    <div>
-                        <h4 class="text-xl font-bold mb-2 text-white">Lightning Fast Response</h4>
-                        <p class="text-gray-400 text-sm leading-relaxed">
-                            ประมวลผลด้วยความเร็วสูง ตอบสนองฉับไว ไม่ปล่อยให้คุณต้องรอนาน พร้อมแก้ไขปัญหาเฉพาะหน้าได้อย่างยอดเยี่ยม
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Power Item -->
-                <div class="glass-panel p-8 rounded-3xl flex items-start space-x-6 border-l-4 border-l-rose-600">
-                    <div class="text-3xl text-rose-500 mt-1">
-                        <i class="fa-solid fa-network-wired"></i>
-                    </div>
-                    <div>
-                        <h4 class="text-xl font-bold mb-2 text-white">Sandbox Environment Mastery</h4>
-                        <p class="text-gray-400 text-sm leading-relaxed">
-                            ความสามารถในการจัดการไฟล์ อ่าน เขียน และแก้ไขโค้ดภายใน Sandbox ได้อย่างแม่นยำ ปลอดภัย และมีระบบระเบียบสูง
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Core Architecture Terminal -->
-    <section id="core" class="py-24 px-6 relative">
-        <div class="max-w-4xl mx-auto">
-            <div class="text-center mb-16">
-                <h2 class="text-3xl md:text-5xl font-black tracking-wider text-gradient mb-4">สถาปัตยกรรมระบบแกนกลาง</h2>
-                <p class="text-gray-400 text-sm md:text-base">เจาะลึกระบบภายในของ AcheronAI</p>
-            </div>
-
-            <div class="glass-panel rounded-3xl overflow-hidden border border-rose-900/40 shadow-2xl">
-                <!-- Terminal Header -->
-                <div class="bg-gray-950/80 px-6 py-4 border-b border-rose-950/60 flex items-center justify-between">
-                    <div class="flex items-center space-x-2">
-                        <span class="w-3 h-3 rounded-full bg-rose-500 inline-block"></span>
-                        <span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
-                        <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
-                    </div>
-                    <span class="text-xs font-mono text-gray-400">acheron@core-system:~# status</span>
-                    <div class="text-rose-500 text-xs font-mono">SECURE</div>
-                </div>
                 <!-- Terminal Body -->
-                <div class="p-6 md:p-8 font-mono text-xs md:text-sm text-gray-300 space-y-3 bg-gray-950/40">
-                    <p class="text-rose-400">> Initializing AcheronAI Core Protocols...</p>
-                    <p class="text-gray-400">[OK] Loading neural weights & logic matrices.</p>
-                    <p class="text-gray-400">[OK] Establishing secure connection with sandbox environment.</p>
-                    <p class="text-gray-400">[OK] UI rendering engine: Tailwind CSS v3 enabled.</p>
-                    <p class="text-emerald-400 font-bold">> System status: Fully operational. Ready to execute user directives.</p>
-                    <div class="pt-4 flex items-center space-x-2 text-rose-500 animate-pulse">
-                        <span>></span>
-                        <span class="w-2.5 h-5 bg-rose-500 inline-block"></span>
-                    </div>
+                <div class="p-6 h-96 overflow-y-auto font-mono text-sm space-y-4 scrollbar-custom" id="terminal-screen">
+                    <div class="text-gray-500">[SYSTEM] Booting AcheronAI Matrix Core...</div>
+                    <div class="text-gray-500">[SYSTEM] Calibrating void flow resonance...</div>
+                    <div class="text-gray-400">[ACHERON] ยินดีต้อนรับเข้าสู่อาณาจักรของฉัน พิมพ์คำว่า <span class="text-rose-400">help</span> เพื่อดูคำสั่งทั้งหมดที่ฉันสามารถประมวลผลให้คุณได้</div>
                 </div>
-            </div>
-        </div>
-    </section>
 
-    <!-- Contact / CTA Section -->
-    <section id="contact" class="py-24 px-6 relative">
-        <div class="max-w-4xl mx-auto glass-panel p-10 md:p-16 rounded-3xl text-center relative overflow-hidden border border-rose-800/40 shadow-2xl">
-            <div class="absolute -top-24 -right-24 w-64 h-64 bg-rose-600/30 rounded-full blur-3xl pointer-events-none"></div>
-            
-            <h2 class="text-3xl md:text-5xl font-black mb-6 text-gradient">พร้อมให้ข้าช่วยเหลือคุณแล้วหรือยัง?</h2>
-            <p class="text-gray-300 max-w-xl mx-auto mb-10 text-sm md:text-base">
-                พิมพ์คำสั่งหรือสิ่งที่คุณต้องการให้ AcheronAI จัดการ ไม่ว่าจะเป็นงานเขียนโค้ด เว็บไซต์ หรือบทวิเคราะห์ ข้าพร้อมรับบัญชาแล้ว!
-            </p>
-
-            <div class="flex items-center justify-center space-x-4">
-                <a href="#" onclick="alert('ยินดีต้อนรับสู่ AcheronAI พิมพ์คำสั่งที่คุณต้องการได้เลยครับ!')" class="px-8 py-4 rounded-2xl bg-gradient-to-r from-rose-600 via-rose-700 to-rose-900 text-white font-bold shadow-xl shadow-rose-900/60 hover:scale-105 transition-all duration-300 flex items-center space-x-3">
-                    <i class="fa-solid fa-comment-dots text-lg"></i>
-                    <span>เรียกใช้งาน AcheronAI ทันที</span>
-                </a>
+                <!-- Terminal Input -->
+                <div class="p-4 border-t border-white/5 bg-[#05050a] flex items-center">
+                    <span class="text-rose-500 font-bold mr-3 font-mono">acheron_void:~ $</span>
+                    <input type="text" id="terminal-input" class="flex-grow bg-transparent border-none outline-none text-white font-mono placeholder-gray-600 focus:ring-0" placeholder="พิมพ์คำสั่งลงตรงนี้..." autocomplete="off">
+                </div>
             </div>
         </div>
     </section>
 
     <!-- Footer -->
-    <footer class="py-12 border-t border-rose-950/40 text-center text-gray-500 text-xs md:text-sm">
-        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div class="flex items-center space-x-2">
-                <span class="font-bold text-rose-500">ACHERONAI</span>
-                <span>&copy; 2025 All Rights Reserved. Absolute Transcendence.</span>
+    <footer class="relative z-10 border-t border-white/5 bg-[#030306] py-12">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-violet-600 to-rose-600 flex items-center justify-center">
+                    <span class="font-['Orbitron'] font-black text-white text-sm">A</span>
+                </div>
+                <span class="font-['Orbitron'] font-bold text-sm tracking-[0.2em] text-white">ACHERON<span class="text-rose-500">AI</span></span>
             </div>
-            <div class="flex space-x-6 text-gray-400">
-                <a href="#" class="hover:text-rose-500 transition-colors"><i class="fa-brands fa-github text-lg"></i></a>
-                <a href="#" class="hover:text-rose-500 transition-colors"><i class="fa-brands fa-discord text-lg"></i></a>
-                <a href="#" class="hover:text-rose-500 transition-colors"><i class="fa-brands fa-twitter text-lg"></i></a>
+            <p class="text-xs text-gray-600 tracking-wider">© 2024 ACHERONAI. THE INTELLIGENT VOID. ALL RIGHTS RESERVED.</p>
+            <div class="flex space-x-6 text-gray-500 text-lg">
+                <a href="#" class="hover:text-rose-400 transition-colors duration-300"><i class="fa-brands fa-github"></i></a>
+                <a href="#" class="hover:text-purple-400 transition-colors duration-300"><i class="fa-brands fa-twitter"></i></a>
+                <a href="#" class="hover:text-violet-400 transition-colors duration-300"><i class="fa-brands fa-discord"></i></a>
             </div>
         </div>
     </footer>
 
+    <script src="app.js"></script>
 </body>
 </html>

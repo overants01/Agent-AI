@@ -42,9 +42,12 @@ MODEL="gemini-2.5-flash"
 LOCAL_PROMPT=""
 SANDBOX_PATH="sandbox"
 MESSAGE_HISTORY=0000
+PHOTO_GEN="python3"
 ```
 
 `LOCAL_PROMPT`, `SANDBOX_PATH` และ `MESSAGE_HISTORY` เป็นการตั้งค่ากลาง ใช้เหมือนกันกับ Gemini, OpenAI, Groq, OpenRouter, Anthropic และ LocalAI การเปลี่ยน `LLM` จะเปลี่ยนเฉพาะผู้ให้บริการ/model ที่เรียก ส่วน sandbox, prompt เสริม และจำนวนประวัติยังคงเดิม `SANDBOX_PATH` เป็นตำแหน่งไฟล์ในเครื่อง ไม่ใช่ค่าของ provider
+
+`PHOTO_GEN` เลือกคำสั่ง Python ที่ใช้รันสคริปต์สร้างรูป กำหนดเป็น `python` หรือ `python3` (ค่าเริ่มต้น `python3`). การสร้างรูปต้องมีไลบรารี Python ที่สคริปต์ต้องใช้ติดตั้งไว้
 
 หากใช้ provider อื่น ให้เปลี่ยน API key, `LLM` และ `MODEL` ให้ตรงกับค่ายนั้น ดูตัวอย่างเพิ่มเติมใน `.env.example` และอย่า commit `.env` หรือใส่ key จริงไว้ใน source code ตัวอย่าง Anthropic:
 
@@ -98,6 +101,7 @@ MESSAGE_HISTORY=0000
 - `.edit: 'filename.ext' lines START-END` แทนที่ช่วงบรรทัด โดยต้องส่ง `.expect` ของเนื้อหาเดิมและ `.with` ของเนื้อหาใหม่
 - `.rm: 'filename.ext'` ลบไฟล์ใน sandbox; ส่งหลายบรรทัดเพื่อลบหลายไฟล์ได้
 - `.name: 'basename' .message: 'ข้อความ' .new ```extension` สร้างไฟล์ โดยใส่เนื้อหาใน code fence
+- `.name: 'image' .photo: 'temporary_script' .new ```py` สร้างรูป โดยสคริปต์ Python ต้องบันทึกรูปเป็น `image.png` ใน sandbox; โปรแกรมลบสคริปต์หลังรัน
 
 ชื่อใน `.name` ต้องไม่มีนามสกุล เพราะนามสกุลมาจาก code fence โปรแกรมจะจัดการนามสกุลที่ซ้ำให้อัตโนมัติ หากสร้างไฟล์ด้วยชื่อที่มีอยู่แล้ว ระบบจะเขียนทับเนื้อหาเดิม งานที่ต้องสร้างหลายไฟล์สามารถส่ง `.name` command block หลายชุดในคำตอบเดียวได้ แต่ละไฟล์มี `.message` ของตัวเอง
 
@@ -210,6 +214,8 @@ AI-created files are written only to `sandbox/`. The agent can request:
 For tasks that need multiple files, the AI can return multiple `.name` command blocks in one response. Each block creates one file, and the app displays each file's `.message` after its write succeeds.
 
 The `.name` value is an extensionless basename; the extension comes from the code fence. The writer also removes a repeated matching extension (for example, `index.html` plus an `html` code fence is saved as `index.html`, not `index.html.html`). If a requested filename already exists, writing to that name replaces its contents.
+
+For image generation, use `.name: 'IMAGE' .photo: 'TEMP_SCRIPT' .new ```py` with Python code that saves `IMAGE.png` directly in the configured sandbox. The app invokes only `python` or `python3`, as selected by `PHOTO_GEN`, and removes the temporary `.py` file after execution. Install the Python packages needed by the generated script first.
 
 Before editing, the AI must read the file first. `.read` results include 1-based line numbers. `.edit` ranges include both endpoints and require an `.expect` block that exactly matches the current lines; stale or mismatched text is rejected without changing the file. If source contains a line of backticks, use a longer outer fence. Edits are limited to regular files directly inside the sandbox and cannot target `main.cpp`.
 
