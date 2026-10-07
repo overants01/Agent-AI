@@ -47,7 +47,20 @@ PHOTO_GEN="python3"
 
 `LOCAL_PROMPT`, `SANDBOX_PATH` และ `MESSAGE_HISTORY` เป็นการตั้งค่ากลาง ใช้เหมือนกันกับ Gemini, OpenAI, Groq, OpenRouter, Anthropic และ LocalAI การเปลี่ยน `LLM` จะเปลี่ยนเฉพาะผู้ให้บริการ/model ที่เรียก ส่วน sandbox, prompt เสริม และจำนวนประวัติยังคงเดิม `SANDBOX_PATH` เป็นตำแหน่งไฟล์ในเครื่อง ไม่ใช่ค่าของ provider
 
-`PHOTO_GEN` เลือกคำสั่ง Python ที่ใช้รันสคริปต์สร้างรูป กำหนดเป็น `python` หรือ `python3` (ค่าเริ่มต้น `python3`). การสร้างรูปต้องมีไลบรารี Python ที่สคริปต์ต้องใช้ติดตั้งไว้
+`PHOTO_GEN` เลือกคำสั่ง Python ที่ใช้รันสคริปต์สร้างรูป กำหนดเป็น `python` หรือ `python3` (ค่าเริ่มต้น `python3`). ตัวสร้างรูปใช้ [Pillow](https://pillow.readthedocs.io/en/stable/installation/basic-installation.html) จึงต้องติดตั้ง Pillow ให้กับ Python ตัวเดียวกับที่เลือกไว้:
+
+```sh
+# PHOTO_GEN="python3"
+python3 -m pip install --upgrade Pillow
+
+# หรือ PHOTO_GEN="python"
+python -m pip install --upgrade Pillow
+
+# Brew
+brew install Pillow
+```
+
+ตรวจสอบการติดตั้งด้วยคำสั่งเดียวกับ `PHOTO_GEN` เช่น `python3 -c "from PIL import Image; print(Image.__version__)"`. หากใช้ virtual environment ให้เปิดใช้งาน environment นั้นก่อนรันแอป เพื่อให้ `system()` เรียก Python ที่มี Pillow ติดตั้งอยู่
 
 หากใช้ provider อื่น ให้เปลี่ยน API key, `LLM` และ `MODEL` ให้ตรงกับค่ายนั้น ดูตัวอย่างเพิ่มเติมใน `.env.example` และอย่า commit `.env` หรือใส่ key จริงไว้ใน source code ตัวอย่าง Anthropic:
 
@@ -96,16 +109,16 @@ MESSAGE_HISTORY=0000
 
 ไฟล์ที่ AI สร้าง อ่าน แสดงรายการ หรือลบ จะถูกจำกัดไว้ใน sandbox:
 
-- `.ls` แสดงรายชื่อไฟล์ปกติที่อยู่ตรงใน sandbox
-- `.read: 'filename.ext'` อ่านไฟล์ใน sandbox
+- `.ls` แสดง path ของไฟล์ปกติทั้งหมดใน sandbox รวมถึงโฟลเดอร์ย่อย
+- `.read: 'relative/path/filename.ext'` อ่านไฟล์ใน sandbox
 - `.edit: 'filename.ext' lines START-END` แทนที่ช่วงบรรทัด โดยต้องส่ง `.expect` ของเนื้อหาเดิมและ `.with` ของเนื้อหาใหม่
-- `.rm: 'filename.ext'` ลบไฟล์ใน sandbox; ส่งหลายบรรทัดเพื่อลบหลายไฟล์ได้
-- `.name: 'basename' .message: 'ข้อความ' .new ```extension` สร้างไฟล์ โดยใส่เนื้อหาใน code fence
+- `.rm: 'relative/path/filename.ext'` ลบไฟล์ใน sandbox; ส่งหลายบรรทัดเพื่อลบหลายไฟล์ได้
+- `.name: 'relative/path/basename' .message: 'ข้อความ' .new ```extension` สร้างไฟล์และโฟลเดอร์ย่อยที่จำเป็น โดยใส่เนื้อหาใน code fence
 - `.name: 'image' .photo: 'temporary_script' .new ```py` สร้างรูป โดยสคริปต์ Python ต้องบันทึกรูปเป็น `image.png` ใน sandbox; โปรแกรมลบสคริปต์หลังรัน
 
-ชื่อใน `.name` ต้องไม่มีนามสกุล เพราะนามสกุลมาจาก code fence โปรแกรมจะจัดการนามสกุลที่ซ้ำให้อัตโนมัติ หากสร้างไฟล์ด้วยชื่อที่มีอยู่แล้ว ระบบจะเขียนทับเนื้อหาเดิม งานที่ต้องสร้างหลายไฟล์สามารถส่ง `.name` command block หลายชุดในคำตอบเดียวได้ แต่ละไฟล์มี `.message` ของตัวเอง
+ค่า `.name` เป็น path แบบ relative จาก root ของ sandbox และชื่อไฟล์ส่วนสุดท้ายต้องไม่มีนามสกุล เพราะนามสกุลมาจาก code fence เช่น `.name: 'scripts/main'` กับ fence `js` จะสร้าง `scripts/main.js` โปรแกรมจัดการนามสกุลที่ซ้ำให้อัตโนมัติ และสร้างโฟลเดอร์ย่อยให้ หากไฟล์มีอยู่แล้ว ระบบจะเขียนทับเนื้อหาเดิม งานที่ต้องสร้างหลายไฟล์สามารถส่ง `.name` command block หลายชุดในคำตอบเดียวได้ แต่ละไฟล์มี `.message` ของตัวเอง
 
-ระบบปฏิเสธ path traversal, symlink, directory และ `main.cpp`; AI จะลบไฟล์ได้เมื่อผู้ใช้ร้องขอเท่านั้น
+ระบบปฏิเสธ absolute path, path traversal, symlink และ `main.cpp`; AI จะลบไฟล์ได้เมื่อผู้ใช้ร้องขอเท่านั้น
 
 ก่อนแก้ไฟล์ AI ต้องอ่านไฟล์ก่อน `.read` ซึ่งจะแสดงเลขบรรทัดแบบเริ่มที่ 1 คำสั่ง `.edit` ใช้ช่วงแบบรวมบรรทัดต้นและท้าย และต้องแนบ `.expect` ที่ตรงกับข้อความเดิมทุกตัวอักษร หาก source มีบรรทัดที่เป็น backticks ให้ใช้ code fence ชั้นนอกที่ยาวกว่า หากไฟล์หรือบรรทัดไม่ตรง ระบบจะไม่เขียนทับไฟล์
 
@@ -205,21 +218,34 @@ Terminal chat uses separate `You` and `AI` labels, wraps prose to the terminal w
 ## Sandbox tools
 
 AI-created files are written only to `sandbox/`. The agent can request:
-- `.ls` to list regular files directly inside the sandbox
-- `.read: 'filename.ext'` to read a file directly inside the sandbox
+- `.ls` to list relative paths for regular files throughout the sandbox
+- `.read: 'relative/path/filename.ext'` to read a file inside the sandbox
 - `.edit: 'filename.ext' lines START-END` to replace a line range, with `.expect` for the exact old text and `.with` for the replacement
-- `.rm: 'filename.ext'` to delete regular files directly inside the sandbox; multiple `.rm` lines can delete multiple files in one response
-- `.name: 'basename' .message: 'Shown after successful write' .new ```extension` followed by a real newline, the file contents, and a closing code fence to create a file
+- `.rm: 'relative/path/filename.ext'` to delete a regular file inside the sandbox; multiple `.rm` lines can delete multiple files in one response
+- `.name: 'relative/path/basename' .message: 'Shown after successful write' .new ```extension` followed by a real newline, the file contents, and a closing code fence to create a file and any needed subfolders
 
 For tasks that need multiple files, the AI can return multiple `.name` command blocks in one response. Each block creates one file, and the app displays each file's `.message` after its write succeeds.
 
-The `.name` value is an extensionless basename; the extension comes from the code fence. The writer also removes a repeated matching extension (for example, `index.html` plus an `html` code fence is saved as `index.html`, not `index.html.html`). If a requested filename already exists, writing to that name replaces its contents.
+The `.name` value is a relative path whose final component has no extension; the extension comes from the code fence. For example, `.name: 'scripts/main'` plus a `js` fence creates `scripts/main.js`. Needed subfolders are created automatically. The writer also removes a repeated matching extension (for example, `web/index.html` plus an `html` code fence is saved as `web/index.html`, not `web/index.html.html`). If a requested filename already exists, writing to that name replaces its contents.
 
-For image generation, use `.name: 'IMAGE' .photo: 'TEMP_SCRIPT' .new ```py` with Python code that saves `IMAGE.png` directly in the configured sandbox. The app invokes only `python` or `python3`, as selected by `PHOTO_GEN`, and removes the temporary `.py` file after execution. Install the Python packages needed by the generated script first.
+Image generation uses Python and the [Pillow package](https://pillow.readthedocs.io/en/stable/installation/basic-installation.html). Install Pillow for the same interpreter selected by `PHOTO_GEN`:
 
-Before editing, the AI must read the file first. `.read` results include 1-based line numbers. `.edit` ranges include both endpoints and require an `.expect` block that exactly matches the current lines; stale or mismatched text is rejected without changing the file. If source contains a line of backticks, use a longer outer fence. Edits are limited to regular files directly inside the sandbox and cannot target `main.cpp`.
+```sh
+# PHOTO_GEN="python3"
+python3 -m pip install --upgrade Pillow
 
-Paths outside the sandbox, directory traversal, symlinks, directories, and `main.cpp` are rejected. All `.rm` commands are parsed before deletion begins. The list, read, and delete operations do not access files outside the sandbox. The AI is instructed to delete files only when explicitly requested.
+# or PHOTO_GEN="python"
+python -m pip install --upgrade Pillow
+
+# Brew
+brew install Pillow
+```
+
+Verify it with the matching command, for example `python3 -c "from PIL import Image; print(Image.__version__)"`. If using a virtual environment, activate it before starting the app so `system()` finds the Python interpreter with Pillow installed. For image requests, the AI writes a temporary Python script that saves `IMAGE.png` in the configured sandbox; the app runs it and removes the `.py` file afterward.
+
+Before editing, the AI must read the file first. `.read` results include 1-based line numbers. `.edit` ranges include both endpoints and require an `.expect` block that exactly matches the current lines; stale or mismatched text is rejected without changing the file. If source contains a line of backticks, use a longer outer fence. Edits can target regular files in sandbox subfolders and cannot target `main.cpp`.
+
+Absolute paths, directory traversal, symlinks, and `main.cpp` are rejected. All `.rm` commands are parsed before deletion begins. The list, read, and delete operations do not access files outside the sandbox. The AI is instructed to delete files only when explicitly requested.
 
 ## Provider API details
 

@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <limits>
 #include <chrono>
+#include <iterator>
 #include <sstream>
 #include <sys/ioctl.h>
 #include <unistd.h>
@@ -540,6 +541,56 @@ FileResult ensure_sandbox_root(bool create_if_missing)
     return {true, ""};
 }
 
+bool is_safe_sandbox_relative_path(const string &filename)
+{
+    if (filename.empty() || filename.find('\\') != string::npos ||
+        filename.find('\0') != string::npos || filename.find(':') != string::npos)
+    {
+        return false;
+    }
+    const fs::path path(filename);
+    if (path.is_absolute() || path.has_root_name() || path.has_root_directory() ||
+        path.filename().empty() || path.lexically_normal().generic_string() != filename)
+    {
+        return false;
+    }
+    for (const fs::path &part : path)
+    {
+        if (part.empty() || part == "." || part == "..") return false;
+    }
+    return true;
+}
+
+FileResult ensure_sandbox_parent_directories(const string &relative_path, bool create_if_missing)
+{
+    if (!is_safe_sandbox_relative_path(relative_path))
+        return {false, "Invalid path: use a relative path inside the sandbox."};
+    const FileResult sandbox = ensure_sandbox_root(create_if_missing);
+    if (!sandbox.success) return sandbox;
+
+    const fs::path relative(relative_path);
+    fs::path current = SANDBOX_DIR;
+    const fs::path parent = relative.parent_path();
+    error_code error;
+    for (const fs::path &component : parent)
+    {
+        current /= component;
+        error.clear();
+        fs::file_status status = fs::symlink_status(current, error);
+        if (error == errc::no_such_file_or_directory && create_if_missing)
+        {
+            error.clear();
+            fs::create_directory(current, error);
+            if (error) return {false, "Cannot create sandbox directory: " + error.message()};
+            status = fs::symlink_status(current, error);
+        }
+        if (error) return {false, "Cannot inspect sandbox directory: " + error.message()};
+        if (fs::is_symlink(status) || !fs::is_directory(status))
+            return {false, "Sandbox path contains a symlink or non-directory component."};
+    }
+    return {true, ""};
+}
+
 FileResult write_file_command(const string &command)
 {
     string name;
@@ -630,20 +681,17 @@ FileResult write_file_command(const string &command)
     }
 
     const string filename = name + extension_suffix;
-    if (!is_safe_filename(filename))
+    if (!is_safe_sandbox_relative_path(filename))
     {
-        return {false, "Invalid filename: only files directly inside sandbox are allowed."};
+        return {false, "Invalid filename: use a safe relative path inside the sandbox."};
     }
-    if (filename == "main.cpp")
+    if (fs::path(filename).filename() == "main.cpp")
     {
         return {false, "Refusing to create protected filename main.cpp."};
     }
 
-    const FileResult sandbox = ensure_sandbox_root(true);
-    if (!sandbox.success)
-    {
-        return sandbox;
-    }
+    const FileResult parents = ensure_sandbox_parent_directories(filename, true);
+    if (!parents.success) return parents;
 
     const fs::path target = SANDBOX_DIR / filename;
     error_code error;
@@ -726,16 +774,13 @@ vector<FileResult> write_file_commands(const string &response)
 
 FileResult read_sandbox_file(const string &filename, string &content)
 {
-    if (!is_safe_filename(filename) || filename == "main.cpp")
+    if (!is_safe_sandbox_relative_path(filename) || fs::path(filename).filename() == "main.cpp")
     {
-        return {false, "Invalid or protected filename; only sandbox files can be read."};
+        return {false, "Invalid or protected path; only sandbox files can be read."};
     }
 
-    const FileResult sandbox = ensure_sandbox_root(false);
-    if (!sandbox.success)
-    {
-        return sandbox;
-    }
+    const FileResult parents = ensure_sandbox_parent_directories(filename, false);
+    if (!parents.success) return parents;
 
     error_code error;
     const fs::path target = SANDBOX_DIR / filename;
@@ -746,7 +791,7 @@ FileResult read_sandbox_file(const string &filename, string &content)
     }
     if (fs::is_symlink(status) || !fs::is_regular_file(status))
     {
-        return {false, "Only regular files directly inside sandbox can be read."};
+        return {false, "Only regular files inside the sandbox can be read."};
     }
 
     ifstream file(target, ios::binary);
@@ -928,9 +973,9 @@ FileResult edit_sandbox_file(const string &response)
     {
         return {false, "Invalid .edit command: missing filename."};
     }
-    if (!is_safe_filename(filename) || filename == "main.cpp")
+    if (!is_safe_sandbox_relative_path(filename) || fs::path(filename).filename() == "main.cpp")
     {
-        return {false, "Invalid or protected filename; only sandbox files can be edited."};
+        return {false, "Invalid or protected path; only sandbox files can be edited."};
     }
 
     const size_t expect_marker = response.find(".expect", filename_end);
@@ -985,11 +1030,8 @@ FileResult edit_sandbox_file(const string &response)
         return {false, "Invalid .edit command: unexpected text after the replacement block."};
     }
 
-    const FileResult sandbox = ensure_sandbox_root(false);
-    if (!sandbox.success)
-    {
-        return sandbox;
-    }
+    const FileResult parents = ensure_sandbox_parent_directories(filename, false);
+    if (!parents.success) return parents;
     const fs::path target = SANDBOX_DIR / filename;
     error_code error;
     const fs::file_status target_status = fs::symlink_status(target, error);
@@ -999,7 +1041,7 @@ FileResult edit_sandbox_file(const string &response)
     }
     if (fs::is_symlink(target_status) || !fs::is_regular_file(target_status))
     {
-        return {false, "Only regular files directly inside sandbox can be edited."};
+        return {false, "Only regular files inside the sandbox can be edited."};
     }
 
     ifstream file(target, ios::binary);
@@ -1090,16 +1132,13 @@ FileResult edit_sandbox_file(const string &response)
 
 FileResult remove_sandbox_file(const string &filename)
 {
-    if (!is_safe_filename(filename) || filename == "main.cpp")
+    if (!is_safe_sandbox_relative_path(filename) || fs::path(filename).filename() == "main.cpp")
     {
-        return {false, "Invalid or protected filename; only sandbox files can be deleted."};
+        return {false, "Invalid or protected path; only sandbox files can be deleted."};
     }
 
-    const FileResult sandbox = ensure_sandbox_root(false);
-    if (!sandbox.success)
-    {
-        return sandbox;
-    }
+    const FileResult parents = ensure_sandbox_parent_directories(filename, false);
+    if (!parents.success) return parents;
 
     const fs::path target = SANDBOX_DIR / filename;
     error_code error;
@@ -1110,7 +1149,7 @@ FileResult remove_sandbox_file(const string &filename)
     }
     if (fs::is_symlink(status) || !fs::is_regular_file(status))
     {
-        return {false, "Only regular files directly inside sandbox can be deleted."};
+        return {false, "Only regular files inside the sandbox can be deleted."};
     }
 
     if (!fs::remove(target, error) || error)
@@ -1175,12 +1214,13 @@ FileResult list_sandbox_files(string &listing)
 
     vector<string> filenames;
     error_code error;
-    for (fs::directory_iterator entry(SANDBOX_DIR, error), end; entry != end && !error; entry.increment(error))
+    for (fs::recursive_directory_iterator entry(SANDBOX_DIR, fs::directory_options::none, error), end;
+         entry != end && !error; entry.increment(error))
     {
         const fs::file_status status = entry->symlink_status(error);
         if (!error && fs::is_regular_file(status))
         {
-            filenames.push_back(entry->path().filename().string());
+            filenames.push_back(entry->path().lexically_relative(SANDBOX_DIR).generic_string());
         }
         error.clear();
     }
@@ -1429,6 +1469,8 @@ ACTION REQUIREMENT (HIGHEST PRIORITY):
 - If the requested operation cannot be completed with the available file tools, state the specific limitation plainly instead of claiming or implying that the file was changed.
 
 CODE QUALITY REQUIREMENT:
+- For a bug report, trace the symptom to the relevant code or error message and fix the cause; do not guess, merely describe a planned fix, or claim success before producing the requested file command.
+- For project or multi-file work, identify the needed file structure first. Use correct relative paths, create every required file, and keep imports, script references, manifests, asset paths, and filenames consistent with one another.
 - Before returning code, carefully check it for syntax errors, missing or incorrect imports, undefined names, mismatched types, invalid API usage, and inconsistent filenames or paths. Make sure each function and variable is defined before use and that the pieces work together.
 - Write complete, runnable code for the requested task. Include required setup/configuration and handle likely invalid input, missing files, and other relevant edge cases. Do not leave TODOs, placeholder implementations, pseudocode, or omitted sections unless the user explicitly asks for them.
 - When editing existing code, preserve its conventions and check how the change affects its callers, related files, and existing behavior. Keep the change focused on the request.
@@ -1454,22 +1496,26 @@ PYTHON_CODE
   7. Make the style intentional and consistent (for example, editorial illustration, painterly poster, isometric scene, or graphic novel). Do not return a sparse, childish-looking doodle. Do not claim Pillow can produce photographic realism; when realism is requested, create the most detailed, dimensional painterly interpretation possible with the available drawing tools.
   8. Keep the Python implementation correct: use Pillow APIs that exist, import every module used, calculate all sizes from the same scale, create RGBA overlays when transparency is needed, and composite layers in the correct order. Avoid external image assets, network downloads, or packages beyond Pillow unless the user specifically requests them.
   9. Before finishing, mentally inspect the composition and code: verify that the subject is visible and not clipped, colors have sufficient contrast, the final image is resized to the intended dimensions, and the script saves exactly IMAGE_BASENAME.png in the sandbox. Save only that final PNG as output.
+- VISUAL QUALITY BAR: Even a simple subject must look finished, not empty or generic. Include a designed background, clear focal subject, foreground/midground/background separation, consistent light and shadow, subtle texture, and several details specific to the requested subject. Use distinct shapes and silhouettes rather than repeating basic circles. Keep decorative details subordinate to the focal point. Add text only when requested and ensure it is spelled correctly and legible.
+- Treat the user's requested style as a real art direction. For example, a watercolor request needs soft pigment-like edges and washes; a cinematic request needs a clear camera angle, atmosphere, and directional lighting; a pixel-art request needs a deliberate pixel grid and hard edges. Do not apply the same generic poster treatment to every request.
 - Return only the required .photo command and complete Python code for image requests. Match the user's requested subject and style; do not substitute a generic example image.
 - Use this command when the user asks to generate an image.
 - When creating one file, output only this command format:
-.name: 'BASE_FILENAME' .message: 'MESSAGE_FOR_USER' .new ```EXTENSION
+.name: 'RELATIVE/PATH/BASE_FILENAME' .message: 'MESSAGE_FOR_USER' .new ```EXTENSION
 CODE_CONTENT
 ```
-- CRITICAL: .name must never contain a file extension. Put the extension only after the opening code fence. For example, use .name: 'index' with ```html, never .name: 'index.html'.
+- .name is a path relative to the sandbox root. Use forward slashes for subfolders; the app creates needed folders automatically. For example, create `scripts/main.js` with `.name: 'scripts/main'` and a `js` code fence.
+- CRITICAL: The last component of .name must not contain a file extension. Put the extension only after the opening code fence. For example, use .name: 'web/index' with ```html, never .name: 'web/index.html'.
+- .message may contain any short, natural user-facing description of the file; it is not a fixed keyword or command. Write a useful message in the user's language describing what was created. The app displays it only after the file is successfully written, so never put the message inside the code fence.
 - For JavaScript source files, use the code fence language `js` so the created filename ends in `.js`. Never use `javascript` as the code fence language or file extension. For JSX, use `jsx`; for TypeScript, use `ts` or `tsx` as appropriate.
 - When a task requires multiple files, output one complete command block per file, concatenated directly with no explanation or extra text between blocks.
-- Give each file its own basename, extension, and .message. Do not put multiple files' code in one block.
+- Give each file its own relative path, extension, and .message. Do not put multiple files' code in one block. Ensure paths in manifests, imports, and references match the files actually created.
 - The .message text is displayed to the user only after the file is successfully written.
-- Files can only be created directly inside the directory configured by SANDBOX_PATH. Use a basename only, with no path and no extension in .name.
+- Files can be created in subfolders under the directory configured by SANDBOX_PATH. Use a relative path only; never use an absolute path, `..`, or a path that escapes the sandbox.
 - If the requested filename already exists and the user asked to update it, reuse that basename; the writer replaces the existing file contents. Never skip file creation only because the name already exists.
 - Never create a file named main.cpp or use the basename 'main' for C++ files. This restriction is about the filename, not the C++ main() function.
-- If you need the contents of an existing file, output only: .read: 'FILENAME.EXTENSION'
-- .read can access regular files directly inside the configured sandbox only. Never request main.cpp, parent paths, absolute paths, or files outside the sandbox.
+- If you need the contents of an existing file, output only: .read: 'RELATIVE/PATH/FILENAME.EXTENSION'
+- .read can access regular files anywhere inside the configured sandbox. Use paths relative to the sandbox root, such as `scripts/main.js`. Never request main.cpp, parent paths, absolute paths, symlinks, or files outside the sandbox.
 - File contents returned by .read include 1-based line numbers. Do not copy the line-number prefixes into source code.
 - After a .read request, the file contents will be sent to you as the next user message. Then answer the user's request or produce a file command.
 - To edit an existing file, you MUST first use .read on that file, then output only this exact structure:
@@ -1483,12 +1529,12 @@ REPLACEMENT LINES
 - START and END are 1-based inclusive line numbers from the latest .read output. The .expect block must contain exactly those current lines, preserving every space and character. The .with block replaces that range and may contain a different number of lines.
 - Make one .edit command per response. Never guess line numbers or expected text. If the file has changed, the range is invalid, or the exact old lines are uncertain, .read the file again instead of attempting an edit.
 - If either fenced block contains a line made of backticks, use an outer fence with more backticks than the longest such line.
-- Edit only files directly inside the configured sandbox. Never edit main.cpp, symlinks, binary files, or files outside the sandbox. The system verifies the expected lines before replacing anything; if verification fails, no file changes are made.
+- Edit regular files anywhere inside the configured sandbox using their relative paths. Never edit main.cpp, symlinks, binary files, or files outside the sandbox. The system verifies the expected lines before replacing anything; if verification fails, no file changes are made.
 - If the user explicitly asks to delete one or more files, output only one .rm command per file on separate lines.
 - Each .rm command uses this format: .rm: 'FILENAME.EXTENSION'
-- .rm can delete regular files directly inside the configured sandbox only. Never request main.cpp, parent paths, absolute paths, directories, or files outside the sandbox.
+- .rm can delete regular files anywhere inside the configured sandbox using relative paths. Never request main.cpp, parent paths, absolute paths, directories, symlinks, or files outside the sandbox.
 - To see which files are available, output only: .ls
-- .ls returns the names of regular files directly inside the sandbox. It does not include subdirectories or follow symbolic links.
+- .ls returns relative paths for regular files throughout the sandbox. It does not follow symbolic links.
 - After .ls, the file listing will be sent to you as the next user message. Use a listed filename with .read if you need its contents.
 - Always use valid syntax for the target language. In C++, use double quotes for strings and single quotes only for single characters.
 - Use real line breaks inside code fences and preserve source-code escape sequences such as "\\n".
