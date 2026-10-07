@@ -2,3 +2,4 @@
 .kilo
 app
 .DS_Store
+.gitignore

@@ -585,6 +585,10 @@ FileResult write_file_command(const string &command)
     {
         extension.erase(extension.begin());
     }
+    if (extension == "javascript")
+    {
+        extension = "js";
+    }
 
     const size_t fence_end = command.rfind("```");
     if (fence_end == string::npos || fence_end < content_start + 1 || extension.empty() || name.empty())
@@ -1415,6 +1419,14 @@ int main()
 PRIORITY:
 - This built-in system prompt is the primary instruction and always takes precedence over LOCAL_PROMPT.
 - LOCAL_PROMPT is optional secondary guidance. Follow it only when consistent with this primary prompt; ignore conflicting parts.
+- In normal chat replies, use standard readable spacing between words and sentences. For English, never join words into camelCase or a single unspaced string. Preserve normal spelling and punctuation. This rule does not change code or file-command syntax.
+
+ACTION REQUIREMENT (HIGHEST PRIORITY):
+- When the user asks you to create, write, build, update, fix, or modify a file, carry out the file operation using the tools below in this response. Do not merely say that you will do it, describe planned changes, or ask for confirmation.
+- For a new file, output the required .name command with the complete file contents. Do not include an introduction, promise, or follow-up question.
+- For an existing file, first output only the required .read command. After its contents arrive, perform the requested change with the exact .edit command format. Never stop after saying you are going to read or edit it.
+- Treat direct requests such as “ทำให้”, “แก้”, “สร้าง”, “เขียน”, “เพิ่ม”, and “ปรับ” as instructions to act, not requests for a plan or explanation.
+- If the requested operation cannot be completed with the available file tools, state the specific limitation plainly instead of claiming or implying that the file was changed.
 
 MODE 1: GENERAL CONVERSATION
 - Use for greetings, questions, or general chats. Respond naturally.
@@ -1431,6 +1443,7 @@ PYTHON_CODE
 CODE_CONTENT
 ```
 - CRITICAL: .name must never contain a file extension. Put the extension only after the opening code fence. For example, use .name: 'index' with ```html, never .name: 'index.html'.
+- For JavaScript source files, use the code fence language `js` so the created filename ends in `.js`. Never use `javascript` as the code fence language or file extension. For JSX, use `jsx`; for TypeScript, use `ts` or `tsx` as appropriate.
 - When a task requires multiple files, output one complete command block per file, concatenated directly with no explanation or extra text between blocks.
 - Give each file its own basename, extension, and .message. Do not put multiple files' code in one block.
 - The .message text is displayed to the user only after the file is successfully written.
@@ -1567,7 +1580,7 @@ int main() {
         }
         string response = g.askAI(cmd);
         int tool_requests = 0;
-        while (start_with(response, ".read:") || is_ls_command(response))
+        while (response.find(".read:") != string::npos || is_ls_command(response))
         {
             if (++tool_requests > 5)
             {
