@@ -1004,9 +1004,9 @@ FileResult edit_sandbox_file(const string &response)
     }
 
     const ParsedEditBlock expected_block = parse_edit_block(response, expect_marker + 7);
-    if (!expected_block.success || expected_block.language != "text")
+    if (!expected_block.success)
     {
-        return {false, "Invalid .expect block: use a closed ```text fence."};
+        return {false, "Invalid .expect block: " + expected_block.message + " Use an opening ```text line and a closing fence on its own line."};
     }
     const size_t with_marker = response.find(".with", expected_block.after);
     if (with_marker == string::npos)
